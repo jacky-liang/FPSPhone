@@ -9,6 +9,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -32,7 +33,10 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private Button btn_p;
     private Button btn_d;
     private Button btn_s;
-
+    private boolean trackingPaused = false;
+    private boolean volume_down_is_down = false;
+    private boolean volume_up_is_down = false;
+    
     private SensorManager aSensorManager;
     private Sensor gyroscope;
     private TextView debugGyroX;
@@ -40,6 +44,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugGyroZ;
 
     private final float EPSILON = 0.01f;
+    private final float ROT_TO_TRANS = 1.5f;
     
     private final String START = "*";
     private final String END = "&";
@@ -60,7 +65,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_NORMAL);
+        aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
 
         debugGyroX = (TextView) findViewById(R.id.debugGyroX);
         debugGyroY = (TextView) findViewById(R.id.debugGyroY);
@@ -71,38 +76,83 @@ public class PlayActivity extends Activity implements SensorEventListener {
         debugGyroZ.setText("Z");
 
         btn_w = (Button) findViewById(R.id.buttonW);
-        btn_w.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed W");
+        btn_w.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        debugStatus.setText("W Down");
+                        toggleKey("W");
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        debugStatus.setText("W Up");
+                        toggleKey("W");
+                        break;
+                }
+                return true;
             }
         });
         btn_a = (Button) findViewById(R.id.buttonA);
-        btn_a.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed A");
+        btn_a.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        debugStatus.setText("A Down");
+                        toggleKey("A");
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        debugStatus.setText("A Up");
+                        toggleKey("A");
+                        break;
+                }
+                return true;
             }
         });
         btn_p = (Button) findViewById(R.id.buttonPause);
-        btn_p.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed Pause");
+        btn_p.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        debugStatus.setText("P Down");
+                        trackingPaused = true;
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        debugStatus.setText("P Up");
+                        trackingPaused = false;
+                        break;
+                }
+                return true;
             }
         });
         btn_d = (Button) findViewById(R.id.buttonD);
-        btn_d.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed D");
+        btn_d.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        debugStatus.setText("D Down");
+                        toggleKey("D");
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        debugStatus.setText("D Up");
+                        toggleKey("D");
+                        break;
+                }
+                return true;
             }
         });
         btn_s = (Button) findViewById(R.id.buttonS);
-        btn_s.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed S");
+        btn_s.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        debugStatus.setText("S Down");
+                        toggleKey("S");
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        debugStatus.setText("S Up");
+                        toggleKey("S");
+                        break;
+                }
+                return true;
             }
         });
     }
@@ -116,18 +166,31 @@ public class PlayActivity extends Activity implements SensorEventListener {
             float axisY = event.values[1];
             float axisZ = event.values[2];
 
-            if(axisX > EPSILON)
+            if(axisX > EPSILON){
                 debugGyroX.setText(Float.toString(axisX));
-            else
+            }
+            else{
                 debugGyroX.setText("0");
-            if(axisY > EPSILON)
+            }
+            if(axisY > EPSILON){
                 debugGyroY.setText(Float.toString(axisY));
-            else
+            }
+            else{
                 debugGyroY.setText("0");
-            if(axisZ > EPSILON)
+            }
+            if(axisZ > EPSILON){
                 debugGyroZ.setText(Float.toString(axisZ));
-            else
+            }
+            else{
                 debugGyroZ.setText("0");
+            }
+            
+            if(!trackingPaused && (sigRotation(axisX) || sigRotation(axisZ))) {
+                moveMouse(axisX,axisZ);
+            }
+            else{
+                moveMouse(0,0);
+            }
         }
 
     }
@@ -140,13 +203,43 @@ public class PlayActivity extends Activity implements SensorEventListener {
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_UP:
                 debugStatus.setText("Pressed Volume Up");
+                if(!volume_up_is_down){
+                    toggleBtn("L");
+                    volume_up_is_down = true;
+                }
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 debugStatus.setText("Pressed Volume Down");
+                if(!volume_down_is_down){
+                    toggleBtn("R");
+                    volume_down_is_down = true;
+                }
                 break;
         }
         return super.onKeyDown(keyCode, event);
     }
+    
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event){
+        switch (keyCode){
+            case KeyEvent.KEYCODE_VOLUME_UP:
+                debugStatus.setText("Pressed Volume Up");
+                if(volume_up_is_down){
+                    toggleBtn("L");
+                    volume_up_is_down = false;
+                }
+                break;
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                debugStatus.setText("Pressed Volume Down");
+                if(volume_down_is_down){
+                    toggleBtn("R");
+                    volume_down_is_down = false;
+                }
+                break;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+    
     
     private void toggleKey(String key){
         String msg = bt_encapsulate(PREFIX_KEY + key);
@@ -156,6 +249,17 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private void toggleBtn(String btn){
         String msg = bt_encapsulate(PREFIX_BTN + btn);
         mConnectedThread.write(msg);
+    }
+    
+    private void moveMouse(float axisX, float axisZ){
+        float velocityHoriz = ROT_TO_TRANS * axisX * -1;
+        float velocityVerti = ROT_TO_TRANS * axisZ * -1;
+        String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(velocityHoriz) + "|" + Float.toString(velocityVerti));
+        mConnectedThread.write(msg);
+    }
+    
+    private boolean sigRotation(float val){
+        return Math.abs(val) > EPSILON;
     }
 
     private String bt_encapsulate(String s){
