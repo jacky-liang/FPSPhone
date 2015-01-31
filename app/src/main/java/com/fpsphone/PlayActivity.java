@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
@@ -40,12 +41,15 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugGyroZ;
 
     private final float EPSILON = 0.01f;
+    private final long vibrateLength = 1; //In seconds
     
     private final String START = "*";
     private final String END = "&";
     private final String PREFIX_KEY = "#";
     private final String PREFIX_BTN = "!";
     private final String PREFIX_MOVE = "~";
+
+    private Vibrator vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,9 +58,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
         debugStatus = (TextView) findViewById(R.id.debugStatus);
 
+
         btSocket = BluetoothApp.btSocket;
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
+
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -138,10 +144,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
-            case KeyEvent.KEYCODE_VOLUME_UP:
+            case KeyEvent.KEYCODE_VOLUME_UP:        //Fire
                 debugStatus.setText("Pressed Volume Up");
+                vib.vibrate(vibrateLength); //vibrate when you fire.
                 break;
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
+            case KeyEvent.KEYCODE_VOLUME_DOWN:      //ADS
                 debugStatus.setText("Pressed Volume Down");
                 break;
         }
