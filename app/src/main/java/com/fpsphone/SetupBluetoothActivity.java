@@ -94,6 +94,7 @@ public class SetupBluetoothActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     //finish_setup_to_play();
+                    finish_setup_to_play();
 
                     if(!connected){
                         bluetoothDebugStatus.setText("Not connected to a device yet!");
