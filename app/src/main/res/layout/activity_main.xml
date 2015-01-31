@@ -10,7 +10,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:columnCount="3"
-        android:rowCount="5"
+        android:rowCount="6"
         android:clickable="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
@@ -73,6 +73,27 @@
             android:layout_row="0"
             android:layout_column="0"
             android:layout_gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/debugGyroX"
+            android:layout_row="4"
+            android:layout_column="0" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/debugGyroY"
+            android:layout_row="4"
+            android:layout_column="1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/debugGyroZ"
+            android:layout_row="4"
+            android:layout_column="2" />
 
 
     </GridLayout>
