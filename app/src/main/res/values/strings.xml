@@ -5,4 +5,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 
+    <string name="go_to_bluetooth">Setup Bluetooth</string>
+    <string name="from_bluetooth_to_main">Confirm Setup</string>
+
 </resources>
