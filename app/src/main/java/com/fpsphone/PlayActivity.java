@@ -19,6 +19,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import android.view.View.OnClickListener;
 
 /**
  * Created by jacky on 1/30/2015.
@@ -37,6 +38,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private boolean volume_down_is_down = false;
     private boolean volume_up_is_down = false;
     
+    private Button btn_g;
+
     private SensorManager aSensorManager;
     private Sensor gyroscope;
     private TextView debugGyroX;
@@ -94,6 +97,13 @@ public class PlayActivity extends Activity implements SensorEventListener {
                         break;
                 }
                 return true;
+            }
+        });
+        btn_g = (Button) findViewById(R.id.buttonG);
+        btn_g.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed G");
             }
         });
         btn_a = (Button) findViewById(R.id.buttonA);

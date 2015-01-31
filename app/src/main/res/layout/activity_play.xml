@@ -36,6 +36,14 @@
         <Button
             android:layout_width="113dp"
             android:layout_height="113dp"
+            android:text="Grenade"
+            android:id="@+id/buttonG"
+            android:layout_row="1"
+            android:layout_column="2" />
+
+        <Button
+            android:layout_width="113dp"
+            android:layout_height="113dp"
             android:text="A"
             android:id="@+id/buttonA"
             android:layout_row="2"
