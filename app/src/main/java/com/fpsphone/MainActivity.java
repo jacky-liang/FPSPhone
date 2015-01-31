@@ -16,7 +16,7 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
-public abstract class MainActivity extends Activity implements SensorEventListener{
+public class MainActivity extends Activity implements SensorEventListener{
 
     private TextView debugStatus;
     private Button btn_w;
@@ -31,7 +31,7 @@ public abstract class MainActivity extends Activity implements SensorEventListen
     private TextView debugGyroY;
     private TextView debugGyroZ;
 
-    private final float EPSILON = 0;
+    private final float EPSILON = 0.01f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +42,15 @@ public abstract class MainActivity extends Activity implements SensorEventListen
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-
+        aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_NORMAL);
 
         debugGyroX = (TextView) findViewById(R.id.debugGyroX);
         debugGyroY = (TextView) findViewById(R.id.debugGyroY);
         debugGyroZ = (TextView) findViewById(R.id.debugGyroZ);
-
+        
+        debugGyroX.setText("X");
+        debugGyroY.setText("Y");
+        debugGyroZ.setText("Z");
 
         btn_w = (Button) findViewById(R.id.buttonW);
         btn_w.setOnClickListener(new View.OnClickListener() {
@@ -86,32 +89,28 @@ public abstract class MainActivity extends Activity implements SensorEventListen
         });
     }
 
-
+    @Override
     public void onSensorChanged(SensorEvent event) {
-        // This timestep's delta rotation to be multiplied by the current rotation
-        // after computing it from the gyro sample data.
 
+        if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            // Axis of the rotation sample, not normalized yet.
+            float axisX = event.values[0];
+            float axisY = event.values[1];
+            float axisZ = event.values[2];
 
-        // Axis of the rotation sample, not normalized yet.
-        float axisX = event.values[0];
-        float axisY = event.values[1];
-        float axisZ = event.values[2];
-
-        // Calculate the angular speed of the sample
-        float omegaMagnitude = (float) Math.sqrt(axisX*axisX + axisY*axisY + axisZ*axisZ);
-
-        // Normalize the rotation vector if it's big enough to get the axis
-        if (omegaMagnitude > EPSILON) {
-            axisX /= omegaMagnitude;
-            axisY /= omegaMagnitude;
-            axisZ /= omegaMagnitude;
+            if(axisX > EPSILON)
+                debugGyroX.setText(Float.toString(axisX));
+            else
+                debugGyroX.setText("0");
+            if(axisY > EPSILON)
+                debugGyroY.setText(Float.toString(axisY));
+            else
+                debugGyroY.setText("0");
+            if(axisZ > EPSILON)
+                debugGyroZ.setText(Float.toString(axisZ));
+            else
+                debugGyroZ.setText("0");
         }
-
-        debugGyroX.setText(Float.toString(axisX));
-        debugGyroY.setText(Float.toString(axisY));
-        debugGyroZ.setText(Float.toString(axisZ));
-
-
 
     }
 
@@ -150,7 +149,10 @@ public abstract class MainActivity extends Activity implements SensorEventListen
         return super.onKeyDown(keyCode, event);
     }
 
-
+    public void onAccuracyChanged(Sensor s, int x){
+        
+        
+    }
 
 
 }
