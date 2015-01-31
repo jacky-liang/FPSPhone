@@ -20,6 +20,8 @@ class Parser {
 		END
 	};
 	Mode mode;
+
+	int messageCount;
 	
 	Parser(Robot r)
 	{
@@ -29,18 +31,22 @@ class Parser {
 		mouseMover = new MouseMover(robot);
 		mouseMover.start();
 		mode = Mode.START;
+		
+		messageCount = 0;
 	}
 	
 	void parse(char b)
 	{
-		System.err.println("Received character: " + b);
+//		System.err.println("Received character: " + b);
 		switch(mode)
 		{
 		case START:
 			if(b == '*')
 			{
 				mode = Mode.TYPE;
-				System.out.println("Message start");
+//				System.out.println("Message start");
+				if(++messageCount % 100 == 0)
+					System.out.println(messageCount + " messages has been received");
 			}else
 			{
 //				System.out.println("Invalid input: no start-of-message");
@@ -52,15 +58,15 @@ class Parser {
 			{
 			case '#':
 				mode = Mode.KEY;
-				System.out.println("Type: key");
+//				System.out.println("Type: key");
 				break;
 			case '!':
 				mode = Mode.BUTTON;
-				System.out.println("Type: button");
+//				System.out.println("Type: button");
 				break;
 			case '~':
 				mode = Mode.MOVE;
-				System.out.println("Type: move");
+//				System.out.println("Type: move");
 				break;
 			default:
 				System.out.println("Invalid input: " + b + " is not a message type");	
@@ -114,7 +120,7 @@ class Parser {
 						double x = Double.parseDouble(velocities[0]), y = Double.parseDouble(velocities[1]);
 						mouseMover.xVel = x;
 						mouseMover.yVel = y;
-						System.out.println("Set mouse velocity to <" + x + ", " + y + ">");
+//						System.out.println("Set mouse velocity to <" + x + ", " + y + ">");
 					}catch(NumberFormatException e)
 					{
 						System.out.println("Invalid input: " + velocities[0] + " and/or " + velocities[1] + " are not valid numbers; discarding message");

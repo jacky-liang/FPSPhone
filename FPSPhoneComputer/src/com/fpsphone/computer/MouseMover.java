@@ -7,7 +7,7 @@ import java.awt.Robot;
 class MouseMover extends Thread {
 	Robot robot;
 	double xVel, yVel;
-	private final static int DELAY = 20;
+	private final static int DELAY = 5;
 	private final static double PIXELS_PER_METER = 800, FACTOR = (DELAY / 1000d) * PIXELS_PER_METER; 
 	
 	MouseMover(Robot r)
