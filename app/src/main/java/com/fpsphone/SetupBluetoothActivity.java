@@ -199,6 +199,7 @@ public class SetupBluetoothActivity extends Activity {
         // Establish the Bluetooth socket connection.
         try
         {
+            btAdapter.cancelDiscovery();
             btSocket.connect();
             connected = true;
             bluetoothDebugStatus.setText("connected with " + device.getAddress());
@@ -300,5 +301,4 @@ public class SetupBluetoothActivity extends Activity {
         BluetoothApp.btSocket = btSocket;
         startActivity(intent_play);
     }
-
 }

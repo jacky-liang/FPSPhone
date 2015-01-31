@@ -67,7 +67,7 @@
         <ListView
             android:id="@+id/list_view_devices"
             android:layout_width="fill_parent"
-            android:layout_height="200dp"
+            android:layout_height="261dp"
             >
 
         </ListView>
