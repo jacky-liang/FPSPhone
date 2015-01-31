@@ -27,27 +27,28 @@ import android.view.View.OnClickListener;
 public class PlayActivity extends Activity implements SensorEventListener {
     private ConnectedThread mConnectedThread;
     private BluetoothSocket btSocket;
-
-    private TextView debugStatus;
+    private SensorManager aSensorManager;
+    private Sensor gyroscope;
+    private Vibrator vib;
+    
     private Button btn_w;
     private Button btn_a;
     private Button btn_p;
     private Button btn_d;
     private Button btn_s;
+    private Button btn_g;
+
     private boolean trackingPaused = false;
     private boolean volume_down_is_down = false;
     private boolean volume_up_is_down = false;
-    
-    private Button btn_g;
 
-    private SensorManager aSensorManager;
-    private Sensor gyroscope;
+    private TextView debugStatus;
     private TextView debugGyroX;
     private TextView debugGyroY;
     private TextView debugGyroZ;
 
     private final float EPSILON = 0.01f;
-    private final long VIBRATE_PERIOD = 500; //In seconds
+    private final long VIBRATE_PERIOD = 70; //In seconds
     private final float ROT_TO_TRANS = 1.6f;
     private final float ROT_TO_TRANS_FAST = 6f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
@@ -57,8 +58,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private final String PREFIX_KEY = "#";
     private final String PREFIX_BTN = "!";
     private final String PREFIX_MOVE = "~";
-
-    private Vibrator vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +73,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
+        vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
         debugGyroX = (TextView) findViewById(R.id.debugGyroX);
         debugGyroY = (TextView) findViewById(R.id.debugGyroY);
@@ -214,6 +214,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        boolean result = true;
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_UP:
                 debugStatus.setText("Pressed Volume Up");
@@ -230,12 +231,17 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     volume_down_is_down = true;
                 }
                 break;
+            default:
+                result = super.onKeyDown(keyCode, event);
+                break;
         }
-        return super.onKeyDown(keyCode, event);
+        return result;
     }
     
+    //For Volume Buttons
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event){
+        boolean result = true;
         switch (keyCode){
             case KeyEvent.KEYCODE_VOLUME_UP:
                 debugStatus.setText("Pressed Volume Up");
@@ -251,11 +257,15 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     volume_down_is_down = false;
                 }
                 break;
+            default:
+                result = super.onKeyUp(keyCode, event);
+                break;
         }
-        return super.onKeyUp(keyCode, event);
+//        return super.onKeyUp(keyCode, event);
+        return result;
     }
     
-    
+    //Bluetooth Helper Function
     private void toggleKey(String key){
         String msg = bt_encapsulate(PREFIX_KEY + key);
         mConnectedThread.write(msg);
