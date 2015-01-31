@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.provider.DocumentsContract;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -44,7 +45,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugGyroY;
     private TextView debugGyroZ;
 
-    private final float EPSILON = 0.001f;
+    private final float EPSILON = 0.01f;
+    private final long vibrateLength = 1; //In seconds
     private final float ROT_TO_TRANS = 1.6f;
     private final float ROT_TO_TRANS_FAST = 6f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
@@ -54,6 +56,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private final String PREFIX_KEY = "#";
     private final String PREFIX_BTN = "!";
     private final String PREFIX_MOVE = "~";
+
+    private Vibrator vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -210,6 +214,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     toggleBtn("L");
                     volume_up_is_down = true;
                 }
+                vib.vibrate(vibrateLength); //vibrate when you fire.
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 debugStatus.setText("Pressed Volume Down");
