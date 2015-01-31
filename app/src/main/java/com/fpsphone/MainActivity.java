@@ -2,15 +2,64 @@ package com.fpsphone;
 
 import android.app.Activity;
 import android.os.Bundle;
+//import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
+
+    private TextView debugStatus;
+    private Button btn_w;
+    private Button btn_a;
+    private Button btn_p;
+    private Button btn_d;
+    private Button btn_s;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        debugStatus = (TextView) findViewById(R.id.debugStatus);
+
+        btn_w = (Button) findViewById(R.id.buttonW);
+        btn_w.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed W");
+            }
+        });
+        btn_a = (Button) findViewById(R.id.buttonA);
+        btn_a.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed A");
+            }
+        });
+        btn_p = (Button) findViewById(R.id.buttonPause);
+        btn_p.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed Pause");
+            }
+        });
+        btn_d = (Button) findViewById(R.id.buttonD);
+        btn_d.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed D");
+            }
+        });
+        btn_s = (Button) findViewById(R.id.buttonS);
+        btn_s.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed S");
+            }
+        });
     }
 
 
@@ -35,4 +84,7 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
+
 }
