@@ -7,5 +7,10 @@
 
     <string name="go_to_bluetooth">Setup Bluetooth</string>
     <string name="from_bluetooth_to_main">Confirm Setup</string>
+    <string name="btn_blutooth_on">Turn Bluetooth On</string>
+    <string name="btn_blutooth_off">Turn Bluetooth Off</string>
+    <string name="btn_bluetooth_device_list">List paired Devices</string>
+    <string name="btn_bluetooth_find">Search Nearby Devices</string>
+    <string name="btn_bluetooth_confirm">Confirm Connected Device</string>
 
 </resources>

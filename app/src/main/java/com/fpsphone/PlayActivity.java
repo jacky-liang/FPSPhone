@@ -16,12 +16,8 @@ public class PlayActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
 
-        Intent intent = getIntent();
-        String message = intent.getStringExtra(SetupBluetoothActivity.EXTRA_MESSAGE_BLUETOOTH);
-
-        //display message:
         playTestReceiveMsg = (TextView) findViewById(R.id.playActivityReceiveMsg);
-        playTestReceiveMsg.setText(message);
+        playTestReceiveMsg.setText(BluetoothApp.btSocket.getRemoteDevice().getName());
         
     }
 }
