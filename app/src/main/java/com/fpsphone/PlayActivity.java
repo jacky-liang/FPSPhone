@@ -19,7 +19,6 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import android.view.View.OnClickListener;
 
 /**
  * Created by jacky on 1/30/2015.
@@ -63,7 +62,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
-
+        
+        //Element Creation
         debugStatus = (TextView) findViewById(R.id.debugStatus);
 
         btSocket = BluetoothApp.btSocket;
@@ -83,6 +83,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
         debugGyroY.setText("Y");
         debugGyroZ.setText("Z");
 
+        //Button event handlers
         btn_w = (Button) findViewById(R.id.buttonW);
         btn_w.setOnTouchListener(new View.OnTouchListener() {
             public boolean onTouch(View v, MotionEvent event) {
@@ -180,6 +181,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
             float axisY = event.values[1];
             float axisZ = event.values[2];
 
+            //Debug sensor
             if(axisX > EPSILON){
                 debugGyroX.setText(Float.toString(axisX));
             }
@@ -199,12 +201,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 debugGyroZ.setText("0");
             }
             
-            if(!trackingPaused && (sigRotation(axisX) || sigRotation(axisZ))) {
+            //For tracking mouse
+            if(!trackingPaused && (sigRotation(axisX) || sigRotation(axisZ)))
                 moveMouse(axisX,axisZ);
-            }
-            else{
+            else
                 moveMouse(0,0);
-            }
         }
 
     }
@@ -212,6 +213,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     public void onAccuracyChanged(Sensor s, int x){
     }
 
+    //For Volume Buttons
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         boolean result = true;
@@ -238,7 +240,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
         return result;
     }
     
-    //For Volume Buttons
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event){
         boolean result = true;
@@ -261,7 +262,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 result = super.onKeyUp(keyCode, event);
                 break;
         }
-//        return super.onKeyUp(keyCode, event);
         return result;
     }
     
@@ -319,7 +319,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 //if you cannot write, close the application
                 Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
                 finish();
-
             }
         }
     }
