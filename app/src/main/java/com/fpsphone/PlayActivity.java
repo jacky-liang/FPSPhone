@@ -46,10 +46,10 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugGyroY;
     private TextView debugGyroZ;
 
-    private final float EPSILON = 0.01f;
+    private final float EPSILON = 0.001f;
     private final long VIBRATE_PERIOD = 70; //In seconds
-    private final float ROT_TO_TRANS = 1.6f;
-    private final float ROT_TO_TRANS_FAST = 6f;
+    private final float ROT_TO_TRANS = 1.8f;
+    private final float ROT_TO_TRANS_FAST = 5.5f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
     
     private final String START = "*";
@@ -279,6 +279,10 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private void moveMouse(float axisX, float axisZ){
         float velocityHoriz = CUR_ROT_TO_TRANS * axisX * -1;
         float velocityVerti = CUR_ROT_TO_TRANS * axisZ * -1;
+        if (velocityHoriz > 0){
+            velocityHoriz *= 1.3;
+        }
+            
         String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(velocityHoriz) + "|" + Float.toString(velocityVerti));
         mConnectedThread.write(msg);
     }
