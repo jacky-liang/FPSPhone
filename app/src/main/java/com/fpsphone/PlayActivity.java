@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,8 +44,10 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugGyroY;
     private TextView debugGyroZ;
 
-    private final float EPSILON = 0.01f;
-    private final float ROT_TO_TRANS = 1.5f;
+    private final float EPSILON = 0.001f;
+    private final float ROT_TO_TRANS = 1.6f;
+    private final float ROT_TO_TRANS_FAST = 6f;
+    private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
     
     private final String START = "*";
     private final String END = "&";
@@ -211,7 +214,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 debugStatus.setText("Pressed Volume Down");
                 if(!volume_down_is_down){
-                    toggleBtn("R");
+//                    toggleBtn("R");
+                    CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
                     volume_down_is_down = true;
                 }
                 break;
@@ -232,7 +236,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 debugStatus.setText("Pressed Volume Down");
                 if(volume_down_is_down){
-                    toggleBtn("R");
+//                    toggleBtn("R");
+                    CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
+
                     volume_down_is_down = false;
                 }
                 break;
@@ -252,8 +258,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
     }
     
     private void moveMouse(float axisX, float axisZ){
-        float velocityHoriz = ROT_TO_TRANS * axisX * -1;
-        float velocityVerti = ROT_TO_TRANS * axisZ * -1;
+        float velocityHoriz = CUR_ROT_TO_TRANS * axisX * -1;
+        float velocityVerti = CUR_ROT_TO_TRANS * axisZ * -1;
         String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(velocityHoriz) + "|" + Float.toString(velocityVerti));
         mConnectedThread.write(msg);
     }
