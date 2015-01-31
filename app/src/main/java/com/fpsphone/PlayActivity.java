@@ -33,6 +33,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private Button btn_p;
     private Button btn_d;
     private Button btn_s;
+    private Button btn_g;
 
     private SensorManager aSensorManager;
     private Sensor gyroscope;
@@ -83,6 +84,13 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 debugStatus.setText("Pressed W");
             }
         });
+        btn_g = (Button) findViewById(R.id.buttonG);
+        btn_g.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                debugStatus.setText("Pressed G");
+            }
+        });
         btn_a = (Button) findViewById(R.id.buttonA);
         btn_a.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -111,6 +119,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 debugStatus.setText("Pressed S");
             }
         });
+
     }
 
     @Override
