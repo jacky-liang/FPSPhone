@@ -7,7 +7,7 @@ import java.util.Set;
 
 class Parser {
 	Robot robot;
-	Set<Integer> pressedKeys;
+	Set<Integer> pressedKeys, pressedButtons;
 	StringBuilder message;
 	MouseMover mouseMover;
 	static enum Mode //what part of the message we should currently be reading
@@ -20,27 +20,34 @@ class Parser {
 		END
 	};
 	Mode mode;
+
+	int messageCount;
 	
 	Parser(Robot r)
 	{
 		robot = r;
 		pressedKeys = new HashSet<Integer>();
+		pressedButtons = new HashSet<Integer>();
 		message = new StringBuilder();
 		mouseMover = new MouseMover(robot);
 		mouseMover.start();
 		mode = Mode.START;
+		
+		messageCount = 0;
 	}
 	
 	void parse(char b)
 	{
-		System.err.println("Received character: " + b);
+//		System.err.println("Received character: " + b);
 		switch(mode)
 		{
 		case START:
 			if(b == '*')
 			{
 				mode = Mode.TYPE;
-				System.out.println("Message start");
+//				System.out.println("Message start");
+				if(++messageCount % 100 == 0)
+					System.out.println(messageCount + " messages have been received");
 			}else
 			{
 //				System.out.println("Invalid input: no start-of-message");
@@ -52,15 +59,15 @@ class Parser {
 			{
 			case '#':
 				mode = Mode.KEY;
-				System.out.println("Type: key");
+//				System.out.println("Type: key");
 				break;
 			case '!':
 				mode = Mode.BUTTON;
-				System.out.println("Type: button");
+//				System.out.println("Type: button");
 				break;
 			case '~':
 				mode = Mode.MOVE;
-				System.out.println("Type: move");
+//				System.out.println("Type: move");
 				break;
 			default:
 				System.out.println("Invalid input: " + b + " is not a message type");	
@@ -88,9 +95,18 @@ class Parser {
 			if(b == 'L' || b == 'R')
 			{
 				int button = InputEvent.getMaskForButton((b == 'L') ? 1 : 3);
-				robot.mousePress(button);
-				robot.mouseRelease(button);
-				System.out.println("Clicked button " + b);
+				if(pressedButtons.contains(button))
+				{
+					robot.mouseRelease(button);
+					pressedButtons.remove(button);
+					System.out.print("Released button ");
+				}else
+				{
+					robot.mousePress(button);
+					pressedButtons.add(button);
+					System.out.print("Pressed button ");
+				}
+				System.out.println(b);
 			}else if(b == 'U')
 			{
 				int amount = -1; //the number of "notches", negative = up
@@ -114,7 +130,7 @@ class Parser {
 						double x = Double.parseDouble(velocities[0]), y = Double.parseDouble(velocities[1]);
 						mouseMover.xVel = x;
 						mouseMover.yVel = y;
-						System.out.println("Set mouse velocity to <" + x + ", " + y + ">");
+//						System.out.println("Set mouse velocity to <" + x + ", " + y + ">");
 					}catch(NumberFormatException e)
 					{
 						System.out.println("Invalid input: " + velocities[0] + " and/or " + velocities[1] + " are not valid numbers; discarding message");
