@@ -9,7 +9,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.provider.DocumentsContract;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,7 +19,6 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import android.view.View.OnClickListener;
 
 /**
  * Created by jacky on 1/30/2015.
@@ -46,7 +44,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugGyroZ;
 
     private final float EPSILON = 0.01f;
-    private final long vibrateLength = 1; //In seconds
+    private final long VIBRATE_PERIOD = 500; //In seconds
     private final float ROT_TO_TRANS = 1.6f;
     private final float ROT_TO_TRANS_FAST = 6f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
@@ -166,7 +164,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-
         if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             // Axis of the rotation sample, not normalized yet.
             float axisX = event.values[0];
@@ -214,12 +211,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     toggleBtn("L");
                     volume_up_is_down = true;
                 }
-                vib.vibrate(vibrateLength); //vibrate when you fire.
+                vib.vibrate(VIBRATE_PERIOD); //vibrate when you fire.
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 debugStatus.setText("Pressed Volume Down");
                 if(!volume_down_is_down){
-//                    toggleBtn("R");
                     CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
                     volume_down_is_down = true;
                 }
@@ -241,9 +237,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 debugStatus.setText("Pressed Volume Down");
                 if(volume_down_is_down){
-//                    toggleBtn("R");
                     CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
-
                     volume_down_is_down = false;
                 }
                 break;
