@@ -3,15 +3,21 @@ package com.fpsphone;
 import android.app.Activity;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.view.Display;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,10 +36,17 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private TextView debugStatus;
     private Button btn_w;
     private Button btn_a;
-    private Button btn_p;
+    //private Button btn_p;
     private Button btn_d;
     private Button btn_s;
     private Button btn_g;
+
+    private Display display;
+    private int stageWidth;
+    private int stageHeight;
+    private Point size;
+
+    private ImageView joystick;
 
     private SensorManager aSensorManager;
     private Sensor gyroscope;
@@ -64,6 +77,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
 
+        display = getWindowManager().getDefaultDisplay();
+        size = new Point();
+        display.getSize(size);
+        stageWidth = size.x;
+        stageHeight = size.y;
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -98,13 +116,65 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 debugStatus.setText("Pressed A");
             }
         });
-        btn_p = (Button) findViewById(R.id.buttonPause);
+
+        joystick = (ImageView) findViewById(R.id.joystick);
+        joystick.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    float touchX = event.getX();
+                    float touchY = event.getY();
+                    debugStatus.setText("Touch Coords: " + String.valueOf(touchX) + "x" + String.valueOf(touchY));
+
+                    float originX = (float)(stageWidth / 2);
+                    float originY = (float)(stageHeight / 2);
+
+                    float delta = (float) Math.abs(Math.atan((event.getY() - originY) / (event.getX() - originX)));
+                    if (touchX >= 0 && touchY >= 0) {   //Quadrant I
+                        if (delta > 45) {
+                            debugStatus.setText("Move W");
+                        }
+                        else {
+                            debugStatus.setText("Move D");
+                        }
+                        //Nothing happens delta is the same
+                    } else if (touchX < 0 && touchY > 0) {    //Quadrant II
+                        delta = 180 - delta;
+                        if (delta < 135) {
+                            debugStatus.setText("Move W");
+                        }
+                        else {
+                            debugStatus.setText("Move A");
+                        }
+                    } else if (touchX <= 0 && touchY <= 0) {    //Quadrant III
+                        delta = 180 + delta;
+                        if (delta < 225) {
+                            debugStatus.setText("Move A");
+                        }
+                        else {
+                            debugStatus.setText("Move S");
+                        }
+                    } else if (touchX > 0 && touchY < 0) {    //Quadrant IV
+                        delta = 360 - delta;
+                        if (delta < 315) {
+                            debugStatus.setText("Move S");
+                        }
+                        else {
+                            debugStatus.setText("Move D");
+                        }
+                    }
+                }
+                return true;
+            }
+        });
+
+        /*btn_p = (Button) findViewById(R.id.buttonPause);
         btn_p.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 debugStatus.setText("Pressed Pause");
             }
-        });
+        });*/
         btn_d = (Button) findViewById(R.id.buttonD);
         btn_d.setOnClickListener(new View.OnClickListener() {
             @Override
