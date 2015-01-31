@@ -7,7 +7,7 @@ import java.util.Set;
 
 class Parser {
 	Robot robot;
-	Set<Integer> pressedKeys, pressedButtons;
+	Set<Integer> pressedKeys;
 	StringBuilder message;
 	MouseMover mouseMover;
 	static enum Mode //what part of the message we should currently be reading
@@ -25,7 +25,6 @@ class Parser {
 	{
 		robot = r;
 		pressedKeys = new HashSet<Integer>();
-		pressedButtons = new HashSet<Integer>();
 		message = new StringBuilder();
 		mouseMover = new MouseMover(robot);
 		mouseMover.start();
@@ -34,6 +33,7 @@ class Parser {
 	
 	void parse(char b)
 	{
+		System.err.println("Received character: " + b);
 		switch(mode)
 		{
 		case START:
@@ -88,18 +88,9 @@ class Parser {
 			if(b == 'L' || b == 'R')
 			{
 				int button = InputEvent.getMaskForButton((b == 'L') ? 1 : 3);
-				if(pressedButtons.contains(button))
-				{
-					robot.mouseRelease(button);
-					pressedButtons.remove(button);
-					System.out.print("Released button ");
-				}else
-				{
-					robot.mousePress(button);
-					pressedButtons.add(button);
-					System.out.print("Pressed button ");
-				}
-				System.out.println(b);
+				robot.mousePress(button);
+				robot.mouseRelease(button);
+				System.out.println("Clicked button " + b);
 			}else if(b == 'U')
 			{
 				int amount = -1; //the number of "notches", negative = up
