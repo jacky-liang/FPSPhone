@@ -21,6 +21,12 @@ public class PlayActivity extends Activity {
     private ConnectedThread mConnectedThread;
     private Button playTestSend;
     private BluetoothSocket btSocket;
+    
+    private final String START = "*";
+    private final String END = "&";
+    private final String PREFIX_KEY = "#";
+    private final String PREFIX_BTN = "!";
+    private final String PREFIX_MOVE = "~";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -31,19 +37,32 @@ public class PlayActivity extends Activity {
         playDebugStatus.setText(BluetoothApp.btSocket.getRemoteDevice().getName());
         
         btSocket = BluetoothApp.btSocket;
+        mConnectedThread = new ConnectedThread(btSocket);
+        mConnectedThread.start();
         
         playTestSend = (Button) findViewById(R.id.playTestSend);
         playTestSend.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                mConnectedThread = new ConnectedThread(btSocket);
-                mConnectedThread.start();
-
-                String msg = "*#W&";
-                playDebugStatus.setText("Sending: " + msg + " over bt to " + btSocket.getRemoteDevice().getName());
-                mConnectedThread.write(msg);
+                playDebugStatus.setText("Sending: " + "W" + " over bt to " + btSocket.getRemoteDevice().getName());
+                toggleBtn("U");
+                toggleBtn("R");
             }
         });
+    }
+    
+    private void toggleKey(String key){
+        String msg = bt_encapsulate(PREFIX_KEY + key);
+        mConnectedThread.write(msg);
+    }
+    
+    private void toggleBtn(String btn){
+        String msg = bt_encapsulate(PREFIX_BTN + btn);
+        mConnectedThread.write(msg);
+    }
+
+    private String bt_encapsulate(String s){
+        return START + s + END;
     }
 
     private class ConnectedThread extends Thread {
