@@ -16,10 +16,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 import android.view.View.OnClickListener;
@@ -40,7 +37,6 @@ public class SetupBluetoothActivity extends Activity {
     private Set<BluetoothDevice> pairedDevices;
     private ListView listViewDevices;
     private ArrayAdapter<String> BTArrayAdapter;
-    private ConnectedThread mConnectedThread;
     private boolean connected = false;
 
     // SPP UUID service - this should work for most devices
@@ -261,39 +257,6 @@ public class SetupBluetoothActivity extends Activity {
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         return  device.createRfcommSocketToServiceRecord(BTMODULEUUID);
-    }
-
-    private class ConnectedThread extends Thread {
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
-
-        //creation of the connect thread
-        public ConnectedThread(BluetoothSocket socket) {
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
-
-            try {
-                //Create I/O streams for connection
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
-            } catch (IOException e) { }
-
-            mmInStream = tmpIn;
-            mmOutStream = tmpOut;
-        }
-
-        //write method
-        public void write(String input) {
-            byte[] msgBuffer = input.getBytes();           //converts entered String into bytes
-            try {
-                mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
-            } catch (IOException e) {
-                //if you cannot write, close the application
-                Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
-                finish();
-
-            }
-        }
     }
 
     public void finish_setup_to_play(){
