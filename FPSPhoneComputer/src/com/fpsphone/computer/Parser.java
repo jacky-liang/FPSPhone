@@ -47,7 +47,7 @@ class Parser {
 				mode = Mode.TYPE;
 //				System.out.println("Message start");
 				if(++messageCount % 100 == 0)
-					System.out.println(messageCount + " messages has been received");
+					System.out.println(messageCount + " messages have been received");
 			}else
 			{
 //				System.out.println("Invalid input: no start-of-message");
