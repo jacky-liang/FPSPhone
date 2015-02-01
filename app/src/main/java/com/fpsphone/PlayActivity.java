@@ -61,6 +61,14 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private final String[] regions = {"D","WD","W","WA","A","AS","S","SD"};
     private int last_region = -1;
 
+    Display display;
+    Point size;
+    int screenWidth;
+    int screenHeight;
+
+    Float origin_offset_x;
+    Float origin_offset_y;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,47 +99,60 @@ public class PlayActivity extends Activity implements SensorEventListener {
         debugGyroY.setText("Y");
         debugGyroZ.setText("Z");
 
-        //Button event handlers
         joystick = (ImageView) findViewById(R.id.joystick);
+        joystick.setVisibility(View.INVISIBLE);
 
-        joystick.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+        display = getWindowManager().getDefaultDisplay();
+        size = new Point();
+        display.getSize(size);
+        screenWidth = size.x;
+        screenHeight = size.y;
+    }
 
-                if(event.getAction() == MotionEvent.ACTION_UP){
-                    unpress_all_keys();
-                }
-                else{
-                    float origin_offset_x = joystick.getWidth()/2;
-                    float origin_offset_y = joystick.getHeight()/2;
-                    float x_corrected = event.getX()-origin_offset_x;
-                    float y_coorected = origin_offset_y-event.getY();
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
 
-                    float ref_angle = (float) Math.abs(Math.atan(y_coorected/x_corrected));
-                    if (x_corrected >= 0 && y_coorected >= 0) {   //Quadrant I
-                        //Nothing happens ref_angle is the same
-                    } else if (x_corrected < 0 && y_coorected > 0) {    //Quadrant II
-                        ref_angle = (float) Math.PI - ref_angle;
-                    } else if (x_corrected <= 0 && y_coorected <= 0) {    //Quadrant III
-                        ref_angle = (float) Math.PI + ref_angle;
-                    } else if (x_corrected > 0 && y_coorected < 0) {    //Quadrant IV
-                        ref_angle = 2* (float)Math.PI - ref_angle;
-                    }
+        if(event.getAction() == MotionEvent.ACTION_UP){ //user releases touch
+            unpress_all_keys();
+            origin_offset_x = null;
+            origin_offset_y = null;
+            joystick.setVisibility(View.INVISIBLE);
+        }
+        else{   //When user touches
+            if (origin_offset_x != null && origin_offset_y != null) {   //continuing to touch
+                float x_corrected = event.getX() - origin_offset_x;
+                float y_corrected = origin_offset_y - event.getY();
 
-                    int region = (int) Math.floor((ref_angle+Math.PI/8)*4/Math.PI)%8;
-                    if(region != last_region){
-                        //turn off last region
-                        if(last_region != -1)
-                            turnOff(last_region);
-                        //turn on current region
-                        turnOn(region);
-                        last_region = region;
-                    }
+                float ref_angle = (float) Math.abs(Math.atan(y_corrected/x_corrected));
+                if (x_corrected >= 0 && y_corrected >= 0) {   //Quadrant I
+                    //Nothing happens ref_angle is the same
+                } else if (x_corrected < 0 && y_corrected > 0) {    //Quadrant II
+                    ref_angle = (float) Math.PI - ref_angle;
+                } else if (x_corrected <= 0 && y_corrected <= 0) {    //Quadrant III
+                    ref_angle = (float) Math.PI + ref_angle;
+                } else if (x_corrected > 0 && y_corrected < 0) {    //Quadrant IV
+                    ref_angle = 2* (float)Math.PI - ref_angle;
                 }
 
-                return true;
+                int region = (int) Math.floor((ref_angle+Math.PI/8)*4/Math.PI)%8;
+                if(region != last_region){
+                    //turn off last region
+                    if(last_region != -1)
+                        turnOff(last_region);
+                    //turn on current region
+                    turnOn(region);
+                    last_region = region;
+                }
             }
-        });
+            else {  //First time touching.
+                origin_offset_x = new Float(event.getX());
+                origin_offset_y = new Float(event.getY());
+                joystick.setX(origin_offset_x);
+                joystick.setY(origin_offset_y);
+                joystick.setVisibility(View.VISIBLE);
+            }
+        }
+        return true;
     }
 
     private void unpress_all_keys(){
@@ -161,8 +182,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
         String temp = "";
         for(char c : keys.toCharArray()){
             if(!pressed_keys.get(c)){
-                pressed_keys.put(c,true);
-                toggleKey(c+"");
+                pressed_keys.put(c, true);
+                toggleKey(c + "");
                 temp += ""+c;
             }
         }
