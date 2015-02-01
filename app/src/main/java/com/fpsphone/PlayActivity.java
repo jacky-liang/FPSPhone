@@ -31,7 +31,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private ConnectedThread mConnectedThread;
     private BluetoothSocket btSocket;
     private SensorManager aSensorManager;
-    private Sensor gyroscope;
     private Vibrator vib;
 
     private boolean trackingPaused = false;
@@ -43,17 +42,17 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
     private ImageView joystick;
 
-    private final float EPSILON = 0.001f;
-    private final long VIBRATE_PERIOD = 70; //In seconds
-    private final float ROT_TO_TRANS = 1.8f;
-    private final float ROT_TO_TRANS_FAST = 5.5f;
+    private final static float EPSILON = 0.001f;
+    private final static long VIBRATE_PERIOD = 70; //In seconds
+    private final static float ROT_TO_TRANS = 1.8f;
+    private final static float ROT_TO_TRANS_FAST = 5.5f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
 
-    private final String START = "*";
-    private final String END = "&";
-    private final String PREFIX_KEY = "#";
-    private final String PREFIX_BTN = "!";
-    private final String PREFIX_MOVE = "~";
+    private final static String START = "*";
+    private final static String END = "&";
+    private final static String PREFIX_KEY = "#";
+    private final static String PREFIX_BTN = "!";
+    private final static String PREFIX_MOVE = "~";
 
     private HashMap<Character, Boolean> pressed_keys = new HashMap<Character, Boolean>();
     private final String[] regions = {"D","WD","W","WA","A","AS","S","SD"};
@@ -99,18 +98,14 @@ public class PlayActivity extends Activity implements SensorEventListener {
         display.getSize(size);
         screenWidth = size.x;
         screenHeight = size.y;
-        
-        Log.i("Test", "D:<");
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.i("Test","he there");
         if(event.getAction() == MotionEvent.ACTION_UP){ //user releases touch
             unpress_all_keys();
             origin_offset_x = null;
             origin_offset_y = null;
-            Log.i("Test", "released");
             joystick.setAlpha(0.5f);
         }
         else{   //When user touches
