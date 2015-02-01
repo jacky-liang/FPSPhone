@@ -2,6 +2,7 @@ package com.fpsphone.computer;
 
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -75,7 +76,11 @@ class Parser {
 			break;
 
 		case KEY:
-			int keyCode = (int) Character.toUpperCase(b); //for now, assume it corresponds to ascii code of the uppercase
+			int keyCode;
+			if(b == ' ')
+				keyCode = KeyEvent.VK_SPACE;
+			else
+				keyCode = (int) Character.toUpperCase(b); //for now, assume it corresponds to ascii code of the uppercase
 			if(pressedKeys.contains(keyCode))
 			{
 				robot.keyRelease(keyCode);
@@ -87,7 +92,7 @@ class Parser {
 				pressedKeys.add(keyCode);
 				System.out.print("Pressed key ");
 			}
-			System.out.println(b);
+			System.out.println("'" + b + "'");
 			mode = Mode.END;
 			break;
 
