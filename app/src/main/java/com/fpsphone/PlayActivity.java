@@ -38,9 +38,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private boolean volume_up_is_down = false;
 
 	//to determine maximum and minimum rotation speed along the axis for reload/change weapon
-	private LinkedList<Pair<Long, Float>> recentRotationSpeeds;
+	private final LinkedList<Pair<Long, Float>> recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
 	//recording accelerations for gesture (i.e. knife)
-	private LinkedList<Pair<Long, Float>> recentAccelerations;
+	private final LinkedList<Pair<Long, Float>> recentAccelerations = new LinkedList<Pair<Long, Float>>();
 
     private ImageView joystick;
 
@@ -49,6 +49,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private final static float ROT_TO_TRANS = 1.8f;
     private final static float ROT_TO_TRANS_FAST = 5.5f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
+	private long last_vol_up_time;
+	private final static long DOUBLE_CLICK_TIME_DIFF = 500000000;
+	private long gesture_start_time;
 
     private final static String START = "*";
     private final static String END = "&";
@@ -91,8 +94,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
 	    aSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
         vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
-	    recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
-	    recentAccelerations = new LinkedList<Pair<Long, Float>>();
 		new GestureMonitor().start();
 
         joystick = (ImageView) findViewById(R.id.joystick);
@@ -103,6 +104,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
         display.getSize(size);
         screenWidth = size.x;
         screenHeight = size.y;
+
+	    last_vol_up_time = System.nanoTime();
+	    gesture_start_time = 0;
     }
 
     @Override
@@ -256,6 +260,14 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 if(!volume_down_is_down){
                     CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
                     volume_down_is_down = true;
+	                if(System.nanoTime() - last_vol_up_time < DOUBLE_CLICK_TIME_DIFF){
+		                System.out.println("Gesture Started");
+		                gesture_start_time = System.nanoTime();
+		                synchronized(recentAccelerations)
+		                {
+			                recentAccelerations.clear();
+		                }
+	                }
                 }
                 break;
             default:
@@ -270,16 +282,17 @@ public class PlayActivity extends Activity implements SensorEventListener {
         boolean result = true;
         switch (keyCode){
             case KeyEvent.KEYCODE_VOLUME_UP:
-                Log.i("Test", "Pressed Volume Up");
+                Log.i("Test", "Pressed Volume Up Release");
                 if(volume_up_is_down){
                     toggleBtn("L");
                     volume_up_is_down = false;
                 }
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
-                Log.i("Test", "Pressed Volume Down");
+                Log.i("Test", "Pressed Volume Down Release");
                 if(volume_down_is_down){
                     CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
+	                last_vol_up_time = System.nanoTime();
                     volume_down_is_down = false;
                 }
                 break;
@@ -358,59 +371,64 @@ public class PlayActivity extends Activity implements SensorEventListener {
 		{
 			while(true)
 			{
-				synchronized (recentRotationSpeeds)
+				//if gesturing, ignore the reload/weapon change
+				if(System.nanoTime() <= gesture_start_time + 1000000000)
 				{
-					Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
-					for (Pair<Long, Float> rotY : recentRotationSpeeds)
+					synchronized (recentAccelerations)
 					{
-						if (rotY.second > max.second)
-							max = rotY;
-						if (rotY.second < min.second)
-							min = rotY;
+						Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
+						for (Pair<Long, Float> accel : recentAccelerations)
+						{
+							if (accel.second > max.second)
+								max = accel;
+							if (accel.second < min.second)
+								min = accel;
+						}
+						if (max.second > 9 && min.second < -2 //fast stabbing forward
+								&& max.first < min.first) //forward before back
+						{
+							System.out.println("knife!");
+							toggleKey("V");
+							toggleKey("V");
+							//reset
+							recentAccelerations.clear();
+						}
 					}
-					//detect reload
-					//a is the max speed when turning away from center, b when returning
-					float a = max.second, b = -min.second; //right then left
-					if(min.first < max.first) //left then right
-					{
-						a = -min.second;
-						b = max.second;
-					}
-					if (a > 6 && b > 3 //allow turning back to be slower
-							&& Math.abs(recentRotationSpeeds.peekLast().second) < 2 //make sure we're almost done turning back
-							&& Math.abs(max.first - min.first) / 1000000000f * (max.second - min.second) >= 1.5) //enough magnitude of turn
-					{
-						System.out.println("reload! direction = " + Math.signum(min.first - max.first));
-						//if max.first < min.first, the phone was turned right then left, vice versa
-                        if(max.first < min.first)
-                            toggleBtn("U");
-                        else{
-                            toggleKey("R");
-                            toggleKey("R");
-                        }
-						//reset so we don't get multiple reload notifications
-						recentRotationSpeeds.clear();
-					}
-				}
-
-				synchronized(recentAccelerations)
+				}else //if reloading/changing weapons, ignore the other gesture
 				{
-					Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
-					for(Pair<Long, Float> accel : recentAccelerations)
+					synchronized (recentRotationSpeeds)
 					{
-						if(accel.second > max.second)
-							max = accel;
-						if(accel.second < min.second)
-							min = accel;
-					}
-					if(max.second > 9 && min.second < -2 //fast stabbing forward
-							&& max.first < min.first) //forward before back
-					{
-						System.out.println("knife!");
-						toggleKey("V");
-						toggleKey("V");
-						//reset
-						recentAccelerations.clear();
+						Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
+						for (Pair<Long, Float> rotY : recentRotationSpeeds)
+						{
+							if (rotY.second > max.second)
+								max = rotY;
+							if (rotY.second < min.second)
+								min = rotY;
+						}
+						//detect reload
+						//a is the max speed when turning away from center, b when returning
+						float a = max.second, b = -min.second; //right then left
+						if(min.first < max.first) //left then right
+						{
+							a = -min.second;
+							b = max.second;
+						}
+						if (a > 6 && b > 3 //allow turning back to be slower
+								&& Math.abs(recentRotationSpeeds.peekLast().second) < 2 //make sure we're almost done turning back
+								&& Math.abs(max.first - min.first) / 1000000000f * (max.second - min.second) >= 1.5) //enough magnitude of turn
+						{
+							System.out.println("reload! direction = " + Math.signum(min.first - max.first));
+							//if max.first < min.first, the phone was turned right then left, vice versa
+							if(max.first < min.first)
+								toggleBtn("U");
+							else{
+								toggleKey("R");
+								toggleKey("R");
+							}
+							//reset so we don't get multiple reload notifications
+							recentRotationSpeeds.clear();
+						}
 					}
 				}
 
