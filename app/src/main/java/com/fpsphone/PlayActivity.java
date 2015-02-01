@@ -3,6 +3,7 @@ package com.fpsphone;
 import android.app.Activity;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -10,10 +11,11 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Pair;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,7 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
-import android.view.View.OnClickListener;
+import java.util.HashMap;
 
 /**
  * Created by jacky on 1/30/2015.
@@ -29,42 +31,48 @@ import android.view.View.OnClickListener;
 public class PlayActivity extends Activity implements SensorEventListener {
     private ConnectedThread mConnectedThread;
     private BluetoothSocket btSocket;
+    private SensorManager aSensorManager;
+    private Sensor gyroscope;
+    private Vibrator vib;
 
-    private TextView debugStatus;
-    private Button btn_w;
-    private Button btn_a;
-    private Button btn_p;
-    private Button btn_d;
-    private Button btn_s;
     private boolean trackingPaused = false;
     private boolean volume_down_is_down = false;
     private boolean volume_up_is_down = false;
-    
-    private Button btn_g;
 
-    private SensorManager aSensorManager;
 	//to determine maximum and minimum rotation speed along the axis for reload/change weapon
 	private LinkedList<Pair<Long, Float>> recentRotationSpeeds;
 
-    private final float EPSILON = 0.01f;
-    private final long VIBRATE_PERIOD = 500; //In seconds
-    private final float ROT_TO_TRANS = 1.6f;
-    private final float ROT_TO_TRANS_FAST = 6f;
+    private TextView debugStatus;
+
+    private ImageView joystick;
+
+    private final float EPSILON = 0.001f;
+    private final long VIBRATE_PERIOD = 70; //In seconds
+    private final float ROT_TO_TRANS = 1.8f;
+    private final float ROT_TO_TRANS_FAST = 5.5f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
-    
+
     private final String START = "*";
     private final String END = "&";
     private final String PREFIX_KEY = "#";
     private final String PREFIX_BTN = "!";
     private final String PREFIX_MOVE = "~";
 
-    private Vibrator vib;
+    private HashMap<Character, Boolean> pressed_keys = new HashMap<Character, Boolean>();
+    private final String[] regions = {"D","WD","W","WA","A","AS","S","SD"};
+    private int last_region = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
 
+        pressed_keys.put('W',false);
+        pressed_keys.put('A',false);
+        pressed_keys.put('S',false);
+        pressed_keys.put('D',false);
+
+        //Element Creation
         debugStatus = (TextView) findViewById(R.id.debugStatus);
 
         btSocket = BluetoothApp.btSocket;
@@ -74,99 +82,87 @@ public class PlayActivity extends Activity implements SensorEventListener {
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         Sensor gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
+        vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
 	    recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
 		new GestureMonitor().start();
 
-        btn_w = (Button) findViewById(R.id.buttonW);
-        btn_w.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("W Down");
-                        toggleKey("W");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("W Up");
-                        toggleKey("W");
-                        break;
-                }
-                return true;
-            }
-        });
-        btn_g = (Button) findViewById(R.id.buttonG);
-        btn_g.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed G");
-            }
-        });
-        btn_a = (Button) findViewById(R.id.buttonA);
-        btn_a.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("A Down");
-                        toggleKey("A");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("A Up");
-                        toggleKey("A");
-                        break;
-                }
-                return true;
-            }
-        });
-        btn_p = (Button) findViewById(R.id.buttonPause);
-        btn_p.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("P Down");
-                        trackingPaused = true;
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("P Up");
-                        trackingPaused = false;
-                        break;
-                }
-                return true;
-            }
-        });
-        btn_d = (Button) findViewById(R.id.buttonD);
-        btn_d.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("D Down");
-                        toggleKey("D");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("D Up");
-                        toggleKey("D");
-                        break;
-                }
-                return true;
-            }
-        });
-        btn_s = (Button) findViewById(R.id.buttonS);
-        btn_s.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("S Down");
-                        toggleKey("S");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("S Up");
-                        toggleKey("S");
-                        break;
-                }
-                return true;
-            }
-        });
+        //Button event handlers
+        joystick = (ImageView) findViewById(R.id.joystick);
 
-	    vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        joystick.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                if(event.getAction() == MotionEvent.ACTION_UP){
+                    unpress_all_keys();
+                }
+                else{
+                    float origin_offset_x = joystick.getWidth()/2;
+                    float origin_offset_y = joystick.getHeight()/2;
+                    float x_corrected = event.getX()-origin_offset_x;
+                    float y_coorected = origin_offset_y-event.getY();
+
+                    float ref_angle = (float) Math.abs(Math.atan(y_coorected/x_corrected));
+                    if (x_corrected >= 0 && y_coorected >= 0) {   //Quadrant I
+                        //Nothing happens ref_angle is the same
+                    } else if (x_corrected < 0 && y_coorected > 0) {    //Quadrant II
+                        ref_angle = (float) Math.PI - ref_angle;
+                    } else if (x_corrected <= 0 && y_coorected <= 0) {    //Quadrant III
+                        ref_angle = (float) Math.PI + ref_angle;
+                    } else if (x_corrected > 0 && y_coorected < 0) {    //Quadrant IV
+                        ref_angle = 2* (float)Math.PI - ref_angle;
+                    }
+
+                    int region = (int) Math.floor((ref_angle+Math.PI/8)*4/Math.PI)%8;
+                    if(region != last_region){
+                        //turn off last region
+                        if(last_region != -1)
+                            turnOff(last_region);
+                        //turn on current region
+                        turnOn(region);
+                        last_region = region;
+                    }
+                }
+
+                return true;
+            }
+        });
+    }
+
+    private void unpress_all_keys(){
+        for(char c : "WASD".toCharArray()){
+            if(pressed_keys.get(c)){
+                toggleKey(c+"");
+                pressed_keys.put(c,false);
+            }
+        }
+    }    
+    
+    private void turnOff(int region){
+        String keys = regions[region];
+        String temp = "";
+        for(char c : keys.toCharArray()){
+            if(pressed_keys.get(c)){
+                toggleKey(c+"");
+                pressed_keys.put(c,false);
+                temp += ""+c;
+            }
+        }
+        debugStatus.setText("Turning off "+temp);
+    }
+
+    private void turnOn(int region){
+        String keys = regions[region];
+        String temp = "";
+        for(char c : keys.toCharArray()){
+            if(!pressed_keys.get(c)){
+                pressed_keys.put(c,true);
+                toggleKey(c+"");
+                temp += ""+c;
+            }
+        }
+        debugStatus.setText("Turning on "+temp);
     }
 
     @Override
@@ -189,18 +185,20 @@ public class PlayActivity extends Activity implements SensorEventListener {
             {
                 if(sigRotation(axisX) || sigRotation(axisZ))
                     moveMouse(axisX,axisZ);
-            }
-            else{
-                moveMouse(0,0);
+            }else
+            {
+	            moveMouse(0, 0);
             }
         }
     }
-    
+
     public void onAccuracyChanged(Sensor s, int x){
     }
 
+    //For Volume Buttons
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        boolean result = true;
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_UP:
                 debugStatus.setText("Pressed Volume Up");
@@ -217,12 +215,16 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     volume_down_is_down = true;
                 }
                 break;
+            default:
+                result = super.onKeyDown(keyCode, event);
+                break;
         }
-        return super.onKeyDown(keyCode, event);
+        return result;
     }
-    
+
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event){
+        boolean result = true;
         switch (keyCode){
             case KeyEvent.KEYCODE_VOLUME_UP:
                 debugStatus.setText("Pressed Volume Up");
@@ -238,28 +240,35 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     volume_down_is_down = false;
                 }
                 break;
+            default:
+                result = super.onKeyUp(keyCode, event);
+                break;
         }
-        return super.onKeyUp(keyCode, event);
+        return result;
     }
-    
-    
+
+    //Bluetooth Helper Function
     private void toggleKey(String key){
         String msg = bt_encapsulate(PREFIX_KEY + key);
         mConnectedThread.write(msg);
     }
-    
+
     private void toggleBtn(String btn){
         String msg = bt_encapsulate(PREFIX_BTN + btn);
         mConnectedThread.write(msg);
     }
-    
+
     private void moveMouse(float axisX, float axisZ){
         float velocityHoriz = CUR_ROT_TO_TRANS * axisX * -1;
         float velocityVerti = CUR_ROT_TO_TRANS * axisZ * -1;
+        if (velocityHoriz > 0){
+            velocityHoriz *= 1.3;
+        }
+
         String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(velocityHoriz) + "|" + Float.toString(velocityVerti));
         mConnectedThread.write(msg);
     }
-    
+
     private boolean sigRotation(float val){
         return Math.abs(val) > EPSILON;
     }
@@ -296,7 +305,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 //if you cannot write, close the application
                 Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
                 finish();
-
             }
         }
     }
