@@ -9,6 +9,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.util.Pair;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedList;
 import android.view.View.OnClickListener;
 
 /**
@@ -41,10 +43,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private Button btn_g;
 
     private SensorManager aSensorManager;
-    private Sensor gyroscope;
-    private TextView debugGyroX;
-    private TextView debugGyroY;
-    private TextView debugGyroZ;
+	//to determine maximum and minimum rotation speed along the axis for reload/change weapon
+	private LinkedList<Pair<Long, Float>> recentRotationSpeeds;
 
     private final float EPSILON = 0.01f;
     private final long VIBRATE_PERIOD = 500; //In seconds
@@ -58,7 +58,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private final String PREFIX_BTN = "!";
     private final String PREFIX_MOVE = "~";
 
-    private Vibrator vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
+    private Vibrator vib;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,16 +72,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
         mConnectedThread.start();
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        Sensor gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
 
-        debugGyroX = (TextView) findViewById(R.id.debugGyroX);
-        debugGyroY = (TextView) findViewById(R.id.debugGyroY);
-        debugGyroZ = (TextView) findViewById(R.id.debugGyroZ);
-
-        debugGyroX.setText("X");
-        debugGyroY.setText("Y");
-        debugGyroZ.setText("Z");
+	    recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
+		new GestureMonitor().start();
 
         btn_w = (Button) findViewById(R.id.buttonW);
         btn_w.setOnTouchListener(new View.OnTouchListener() {
@@ -170,6 +165,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 return true;
             }
         });
+
+	    vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
     }
 
     @Override
@@ -180,33 +177,23 @@ public class PlayActivity extends Activity implements SensorEventListener {
             float axisY = event.values[1];
             float axisZ = event.values[2];
 
-            if(axisX > EPSILON){
-                debugGyroX.setText(Float.toString(axisX));
-            }
-            else{
-                debugGyroX.setText("0");
-            }
-            if(axisY > EPSILON){
-                debugGyroY.setText(Float.toString(axisY));
-            }
-            else{
-                debugGyroY.setText("0");
-            }
-            if(axisZ > EPSILON){
-                debugGyroZ.setText(Float.toString(axisZ));
-            }
-            else{
-                debugGyroZ.setText("0");
-            }
-            
-            if(!trackingPaused && (sigRotation(axisX) || sigRotation(axisZ))) {
-                moveMouse(axisX,axisZ);
+	        synchronized(recentRotationSpeeds)
+	        {
+		        recentRotationSpeeds.add(new Pair<Long, Float>(event.timestamp, axisY));
+		        //remove rotation speeds from over a second ago
+		        while (event.timestamp - recentRotationSpeeds.peek().first > 1000000000)
+			        recentRotationSpeeds.remove();
+	        }
+
+            if(!trackingPaused)
+            {
+                if(sigRotation(axisX) || sigRotation(axisZ))
+                    moveMouse(axisX,axisZ);
             }
             else{
                 moveMouse(0,0);
             }
         }
-
     }
     
     public void onAccuracyChanged(Sensor s, int x){
@@ -313,4 +300,41 @@ public class PlayActivity extends Activity implements SensorEventListener {
             }
         }
     }
-}    
+
+	private class GestureMonitor extends Thread
+	{
+		public void run()
+		{
+			while(true)
+			{
+				Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 99999f);
+				synchronized (recentRotationSpeeds)
+				{
+					for (Pair<Long, Float> rotY : recentRotationSpeeds)
+					{
+						if (rotY.second > max.second)
+							max = rotY;
+						if (rotY.second < min.second)
+							min = rotY;
+					}
+					//detect reload
+					if (max.second > 5 && min.second < -5 && Math.abs(recentRotationSpeeds.peekLast().second) < 2
+							&& Math.abs(max.first - min.first) * (max.second + min.second) >= 1.5)
+					{
+						System.out.println("reload! direction = " + Math.signum(min.first - max.first));
+						//if max.first < min.first, the phone was turned right then left, vice versa
+						//reset so we don't get multiple reload notifications
+						recentRotationSpeeds.clear();
+					}
+				}
+				try
+				{
+					Thread.sleep(5);
+				}catch(InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+}
