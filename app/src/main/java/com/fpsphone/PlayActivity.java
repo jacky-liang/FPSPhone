@@ -44,7 +44,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
     private ImageView joystick;
 
-    private final static float EPSILON = 0.001f;
+    private final static float EPSILON = 0.03f;
     private final static long VIBRATE_PERIOD = 70; //In seconds
     private final static float ROT_TO_TRANS = 1.8f;
     private final static float ROT_TO_TRANS_FAST = 5.5f;
@@ -252,8 +252,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
             if(!trackingPaused)
             {
-                if(sigRotation(axisX) || sigRotation(axisZ))
-                    moveMouse(axisX,axisZ);
+	            moveMouse(sigRotation(axisX) ? axisX : axisX * axisX, sigRotation(axisZ) ? axisZ : axisZ * axisZ);
             }else
             {
 	            moveMouse(0, 0);
@@ -391,7 +390,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
             } catch (IOException e) {
                 //if you cannot write, close the application
-                Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
+                Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_SHORT).show();
                 finish();
             }
         }
