@@ -85,7 +85,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
         pressed_keys.put('S', false);
         pressed_keys.put('D', false);
         pressed_keys.put(' ', false);
-        pressed_keys.put('R', false); //Right Mouse Button
 
         //Element Creation
         btSocket = BluetoothApp.btSocket;
@@ -157,7 +156,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                         }
                         else {  //Aim Down Sight
                             toggleBtn("R");
-                            pressed_keys.put('R', true);
+                            toggleBtn("R");
                         }
                     }
                 }
@@ -169,7 +168,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                         }
                         else {  //Aim Down Sight
                             toggleBtn("R");
-                            pressed_keys.put('R', true);
+                            toggleBtn("R");
                         }
                     }                    
                 }
@@ -190,10 +189,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 toggleKey(" ");
                 pressed_keys.put(' ', false);
             }
-            else if (pressed_keys.get('R')) {
-                toggleKey("R");
-                pressed_keys.put('R', false);
-            }
         }
         return true;
     }
@@ -204,11 +199,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 toggleKey(c+"");
                 pressed_keys.put(c,false);
             }
-        }
-        if (pressed_keys.get('R')) {    //Right Mouse Button
-            toggleBtn("R");
-            pressed_keys.put('R', false);
-            
         }
         if (pressed_keys.get(' ')) {    //Right Mouse Button
             toggleBtn(" ");
