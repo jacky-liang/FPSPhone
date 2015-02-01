@@ -39,6 +39,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
 	//to determine maximum and minimum rotation speed along the axis for reload/change weapon
 	private LinkedList<Pair<Long, Float>> recentRotationSpeeds;
+	//recording accelerations for gesture (i.e. knife)
+	private LinkedList<Pair<Long, Float>> recentAccelerations;
 
     private ImageView joystick;
 
@@ -84,10 +86,13 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         Sensor gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
+        aSensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
+	    Sensor accelerometer = aSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+	    aSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
         vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
 	    recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
+	    recentAccelerations = new LinkedList<Pair<Long, Float>>();
 		new GestureMonitor().start();
 
         joystick = (ImageView) findViewById(R.id.joystick);
@@ -194,7 +199,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+        if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE)
+        {
             // Axis of the rotation sample, not normalized yet.
             float axisX = event.values[0];
             float axisY = event.values[1];
@@ -216,6 +222,16 @@ public class PlayActivity extends Activity implements SensorEventListener {
             {
 	            moveMouse(0, 0);
             }
+        }else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)
+        {
+	        synchronized(recentAccelerations)
+	        {
+		        //y-component
+		        recentAccelerations.add(new Pair<Long, Float>(event.timestamp, event.values[1]));
+		        //remove accelerations from over 0.7 second ago
+		        while (event.timestamp - recentAccelerations.peek().first > 700000000)
+			        recentAccelerations.remove();
+	        }
         }
     }
 
@@ -342,9 +358,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
 		{
 			while(true)
 			{
-				Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
 				synchronized (recentRotationSpeeds)
 				{
+					Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
 					for (Pair<Long, Float> rotY : recentRotationSpeeds)
 					{
 						if (rotY.second > max.second)
@@ -376,6 +392,28 @@ public class PlayActivity extends Activity implements SensorEventListener {
 						recentRotationSpeeds.clear();
 					}
 				}
+
+				synchronized(recentAccelerations)
+				{
+					Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
+					for(Pair<Long, Float> accel : recentAccelerations)
+					{
+						if(accel.second > max.second)
+							max = accel;
+						if(accel.second < min.second)
+							min = accel;
+					}
+					if(max.second > 9 && min.second < -2 //fast stabbing forward
+							&& max.first < min.first) //forward before back
+					{
+						System.out.println("knife!");
+						toggleKey("V");
+						toggleKey("V");
+						//reset
+						recentAccelerations.clear();
+					}
+				}
+
 				try
 				{
 					Thread.sleep(5);
