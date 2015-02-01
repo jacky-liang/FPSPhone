@@ -101,16 +101,16 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     float origin_offset_x = joystick.getWidth()/2;
                     float origin_offset_y = joystick.getHeight()/2;
                     float x_corrected = event.getX()-origin_offset_x;
-                    float y_coorected = origin_offset_y-event.getY();
+                    float y_corrected = origin_offset_y-event.getY();
 
-                    float ref_angle = (float) Math.abs(Math.atan(y_coorected/x_corrected));
-                    if (x_corrected >= 0 && y_coorected >= 0) {   //Quadrant I
+                    float ref_angle = (float) Math.abs(Math.atan(y_corrected/x_corrected));
+                    if (x_corrected >= 0 && y_corrected >= 0) {   //Quadrant I
                         //Nothing happens ref_angle is the same
-                    } else if (x_corrected < 0 && y_coorected > 0) {    //Quadrant II
+                    } else if (x_corrected < 0 && y_corrected > 0) {    //Quadrant II
                         ref_angle = (float) Math.PI - ref_angle;
-                    } else if (x_corrected <= 0 && y_coorected <= 0) {    //Quadrant III
+                    } else if (x_corrected <= 0 && y_corrected <= 0) {    //Quadrant III
                         ref_angle = (float) Math.PI + ref_angle;
-                    } else if (x_corrected > 0 && y_coorected < 0) {    //Quadrant IV
+                    } else if (x_corrected > 0 && y_corrected < 0) {    //Quadrant IV
                         ref_angle = 2* (float)Math.PI - ref_angle;
                     }
 
@@ -331,6 +331,12 @@ public class PlayActivity extends Activity implements SensorEventListener {
 					{
 						System.out.println("reload! direction = " + Math.signum(min.first - max.first));
 						//if max.first < min.first, the phone was turned right then left, vice versa
+                        if(max.first < min.first)
+                            toggleBtn("U");
+                        else{
+                            toggleKey("R");
+                            toggleKey("R");
+                        }
 						//reset so we don't get multiple reload notifications
 						recentRotationSpeeds.clear();
 					}
