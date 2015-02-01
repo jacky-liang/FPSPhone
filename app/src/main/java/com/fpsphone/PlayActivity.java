@@ -11,12 +11,11 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Pair;
+import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -42,8 +41,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
 	//to determine maximum and minimum rotation speed along the axis for reload/change weapon
 	private LinkedList<Pair<Long, Float>> recentRotationSpeeds;
 
-    private TextView debugStatus;
-
     private ImageView joystick;
 
     private final float EPSILON = 0.001f;
@@ -62,6 +59,14 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private final String[] regions = {"D","WD","W","WA","A","AS","S","SD"};
     private int last_region = -1;
 
+    Display display;
+    Point size;
+    int screenWidth;
+    int screenHeight;
+
+    Float origin_offset_x;
+    Float origin_offset_y;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,10 +76,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
         pressed_keys.put('A',false);
         pressed_keys.put('S',false);
         pressed_keys.put('D',false);
+        pressed_keys.put(' ',false);
 
         //Element Creation
-        debugStatus = (TextView) findViewById(R.id.debugStatus);
-
         btSocket = BluetoothApp.btSocket;
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
@@ -87,51 +91,79 @@ public class PlayActivity extends Activity implements SensorEventListener {
 	    recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
 		new GestureMonitor().start();
 
-        //Button event handlers
         joystick = (ImageView) findViewById(R.id.joystick);
+        joystick.setAlpha(0f);
 
-        joystick.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+        display = getWindowManager().getDefaultDisplay();
+        size = new Point();
+        display.getSize(size);
+        screenWidth = size.x;
+        screenHeight = size.y;
+        
+        Log.i("Test", "D:<");
+    }
 
-                if(event.getAction() == MotionEvent.ACTION_UP){
-                    unpress_all_keys();
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.i("Test","he there");
+        if(event.getAction() == MotionEvent.ACTION_UP){ //user releases touch
+            unpress_all_keys();
+            origin_offset_x = null;
+            origin_offset_y = null;
+            Log.i("Test", "released");
+            joystick.setAlpha(0.5f);
+        }
+        else{   //When user touches
+            if (origin_offset_x != null && origin_offset_y != null) {   //continuing to touch
+                float x_corrected = event.getX() - origin_offset_x;
+                float y_corrected = origin_offset_y - event.getY();
+                float ref_angle = (float) Math.abs(Math.atan(y_corrected/x_corrected));
+                if (x_corrected >= 0 && y_corrected >= 0) {  //Quadrant I
+                    //Nothing happens ref_angle is the same
+                } else if (x_corrected < 0 && y_corrected > 0) {    //Quadrant II
+                    ref_angle = (float) Math.PI - ref_angle;
+                } else if (x_corrected <= 0 && y_corrected <= 0) {    //Quadrant III
+                    ref_angle = (float) Math.PI + ref_angle;
+                } else if (x_corrected > 0 && y_corrected < 0) {    //Quadrant IV
+                    ref_angle = 2* (float)Math.PI - ref_angle;
                 }
-                else{
-                    float origin_offset_x = joystick.getWidth()/2;
-                    float origin_offset_y = joystick.getHeight()/2;
-                    float x_corrected = event.getX()-origin_offset_x;
-                    float y_corrected = origin_offset_y-event.getY();
 
-                    float ref_angle = (float) Math.abs(Math.atan(y_corrected/x_corrected));
-                    if (x_corrected >= 0 && y_corrected >= 0) {   //Quadrant I
-                        //Nothing happens ref_angle is the same
-                    } else if (x_corrected < 0 && y_corrected > 0) {    //Quadrant II
-                        ref_angle = (float) Math.PI - ref_angle;
-                    } else if (x_corrected <= 0 && y_corrected <= 0) {    //Quadrant III
-                        ref_angle = (float) Math.PI + ref_angle;
-                    } else if (x_corrected > 0 && y_corrected < 0) {    //Quadrant IV
-                        ref_angle = 2* (float)Math.PI - ref_angle;
-                    }
-
-                    int region = (int) Math.floor((ref_angle+Math.PI/8)*4/Math.PI)%8;
-                    if(region != last_region){
-                        //turn off last region
-                        if(last_region != -1)
-                            turnOff(last_region);
-                        //turn on current region
-                        turnOn(region);
-                        last_region = region;
-                    }
+                int region = (int) Math.floor((ref_angle+Math.PI/8)*4/Math.PI)%8;
+                if(region != last_region){
+                    //turn off last region
+                    if(last_region != -1)
+                        turnOff(last_region);
+                    //turn on current region
+                    turnOn(region);
+                    last_region = region;
                 }
 
-                return true;
+                if (event.getPointerCount() > 1) {  //If Multitouch
+                    if (event.getAction() == event.ACTION_POINTER_DOWN) {
+                        toggleKey(" ");
+                    }
+                }
             }
-        });
+            else {  //First time touching.
+                origin_offset_x = new Float(event.getX());
+                origin_offset_y = new Float(event.getY());
+                Log.i("Test", origin_offset_x + ", " + origin_offset_y);
+                joystick.setX(origin_offset_x-joystick.getWidth()/2);
+                joystick.setY(origin_offset_y-joystick.getHeight());
+                joystick.setAlpha(1.0f);
+            }
+        }
+
+        if (event.getAction() == event.ACTION_POINTER_UP) {
+            toggleKey(" ");
+            pressed_keys.put(' ', true);
+        }
+
+        return true;
     }
 
     private void unpress_all_keys(){
-        for(char c : "WASD".toCharArray()){
+        for(char c : "WASD ".toCharArray()){
             if(pressed_keys.get(c)){
                 toggleKey(c+"");
                 pressed_keys.put(c,false);
@@ -149,7 +181,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 temp += ""+c;
             }
         }
-        debugStatus.setText("Turning off "+temp);
+        Log.i("Test", "Turning off "+temp);
     }
 
     private void turnOn(int region){
@@ -157,12 +189,12 @@ public class PlayActivity extends Activity implements SensorEventListener {
         String temp = "";
         for(char c : keys.toCharArray()){
             if(!pressed_keys.get(c)){
-                pressed_keys.put(c,true);
-                toggleKey(c+"");
+                pressed_keys.put(c, true);
+                toggleKey(c + "");
                 temp += ""+c;
             }
         }
-        debugStatus.setText("Turning on "+temp);
+        Log.i("Test", "Turning on "+temp);
     }
 
     @Override
@@ -201,7 +233,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
         boolean result = true;
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_UP:
-                debugStatus.setText("Pressed Volume Up");
+                Log.i("Test", "Pressed Volume Up");
                 if(!volume_up_is_down){
                     toggleBtn("L");
                     volume_up_is_down = true;
@@ -209,7 +241,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 vib.vibrate(VIBRATE_PERIOD); //vibrate when you fire.
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
-                debugStatus.setText("Pressed Volume Down");
+                Log.i("Test", "Pressed Volume Down");
                 if(!volume_down_is_down){
                     CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
                     volume_down_is_down = true;
@@ -227,14 +259,14 @@ public class PlayActivity extends Activity implements SensorEventListener {
         boolean result = true;
         switch (keyCode){
             case KeyEvent.KEYCODE_VOLUME_UP:
-                debugStatus.setText("Pressed Volume Up");
+                Log.i("Test", "Pressed Volume Up");
                 if(volume_up_is_down){
                     toggleBtn("L");
                     volume_up_is_down = false;
                 }
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
-                debugStatus.setText("Pressed Volume Down");
+                Log.i("Test", "Pressed Volume Down");
                 if(volume_down_is_down){
                     CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
                     volume_down_is_down = false;
