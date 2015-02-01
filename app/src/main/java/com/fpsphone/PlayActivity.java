@@ -65,17 +65,22 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
     Float origin_offset_x;
     Float origin_offset_y;
+    
+    private int originPointer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
 
-        pressed_keys.put('W',false);
-        pressed_keys.put('A',false);
-        pressed_keys.put('S',false);
-        pressed_keys.put('D',false);
-        pressed_keys.put(' ',false);
+        originPointer = -1;
+        
+        pressed_keys.put('W', false);
+        pressed_keys.put('A', false);
+        pressed_keys.put('S', false);
+        pressed_keys.put('D', false);
+        pressed_keys.put(' ', false);
+        pressed_keys.put('R', false); //Right Mouse Button
 
         //Element Creation
         btSocket = BluetoothApp.btSocket;
@@ -107,6 +112,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
             origin_offset_x = null;
             origin_offset_y = null;
             joystick.setAlpha(0.5f);
+            originPointer = -1;
         }
         else{   //When user touches
             if (origin_offset_x != null && origin_offset_y != null) {   //continuing to touch
@@ -132,28 +138,54 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     turnOn(region);
                     last_region = region;
                 }
-
-                if (event.getPointerCount() > 1) {  //If Multitouch
-                    if (event.getAction() == event.ACTION_POINTER_DOWN) {
-                        toggleKey(" ");
+                
+                
+                if (event.getPointerCount() == 2) {  //If Multitouch
+                    if (event.getPointerId(1) != originPointer) {
+                        if (event.getY(1) > origin_offset_y) {    //"Space" Jump
+                            toggleKey(" ");
+                            pressed_keys.put(' ', true);
+                        }
+                        else {  //Aim Down Sight
+                            toggleBtn("R");
+                            pressed_keys.put('R', true);
+                        }
                     }
+                }
+                else if (event.getPointerCount() == 3) {
+                    if (event.getPointerId(2) != originPointer) {
+                        if (event.getY(2) > origin_offset_y) {    //"Space" Jump
+                            toggleKey(" ");
+                            pressed_keys.put(' ', true);
+                        }
+                        else {  //Aim Down Sight
+                            toggleBtn("R");
+                            pressed_keys.put('R', true);
+                        }
+                    }                    
                 }
             }
             else {  //First time touching.
-                origin_offset_x = new Float(event.getX());
-                origin_offset_y = new Float(event.getY());
+                origin_offset_x = event.getX();
+                origin_offset_y = event.getY();
                 Log.i("Test", origin_offset_x + ", " + origin_offset_y);
                 joystick.setX(origin_offset_x-joystick.getWidth()/2);
                 joystick.setY(origin_offset_y-joystick.getHeight());
                 joystick.setAlpha(1.0f);
+                originPointer = event.getPointerId(0);
             }
         }
 
-        if (event.getAction() == event.ACTION_POINTER_UP) {
-            toggleKey(" ");
-            pressed_keys.put(' ', true);
+        if (event.getAction() == MotionEvent.ACTION_POINTER_UP) {
+            if (pressed_keys.get(' ')) {
+                toggleKey(" ");
+                pressed_keys.put(' ', false);
+            }
+            else if (pressed_keys.get('R')) {
+                toggleKey("R");
+                pressed_keys.put('R', false);
+            }
         }
-
         return true;
     }
 
@@ -163,6 +195,16 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 toggleKey(c+"");
                 pressed_keys.put(c,false);
             }
+        }
+        if (pressed_keys.get('R')) {    //Right Mouse Button
+            toggleBtn("R");
+            pressed_keys.put('R', false);
+            
+        }
+        if (pressed_keys.get(' ')) {    //Right Mouse Button
+            toggleBtn(" ");
+            pressed_keys.put(' ', false);
+
         }
     }    
     
