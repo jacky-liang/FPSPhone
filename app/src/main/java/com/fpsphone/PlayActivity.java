@@ -78,6 +78,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
         pressed_keys.put('A',false);
         pressed_keys.put('S',false);
         pressed_keys.put('D',false);
+        pressed_keys.put(' ',false);
 
         //Element Creation
         debugStatus = (TextView) findViewById(R.id.debugStatus);
@@ -116,7 +117,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
             unpress_all_keys();
             origin_offset_x = null;
             origin_offset_y = null;
-            joystick.setVisibility(View.INVISIBLE);
+            joystick.setAlpha(0.5f);
         }
         else{   //When user touches
             if (origin_offset_x != null && origin_offset_y != null) {   //continuing to touch
@@ -143,20 +144,32 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     turnOn(region);
                     last_region = region;
                 }
+
+                if (event.getPointerCount() > 1) {  //If Multitouch
+                    if (event.getAction() == event.ACTION_POINTER_DOWN) {
+                        toggleKey(" ");
+                    }
+                }
             }
             else {  //First time touching.
                 origin_offset_x = new Float(event.getX());
                 origin_offset_y = new Float(event.getY());
                 joystick.setX(origin_offset_x);
                 joystick.setY(origin_offset_y);
-                joystick.setVisibility(View.VISIBLE);
+                joystick.setAlpha(1.0f);
             }
         }
+
+        if (event.getAction() == event.ACTION_POINTER_UP) {
+            toggleKey(" ");
+            pressed_keys.put(' ', true);
+        }
+
         return true;
     }
 
     private void unpress_all_keys(){
-        for(char c : "WASD".toCharArray()){
+        for(char c : "WASD ".toCharArray()){
             if(pressed_keys.get(c)){
                 toggleKey(c+"");
                 pressed_keys.put(c,false);
