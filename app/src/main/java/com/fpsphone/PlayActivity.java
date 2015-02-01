@@ -10,12 +10,11 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -37,13 +36,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private boolean volume_down_is_down = false;
     private boolean volume_up_is_down = false;
 
-    private TextView debugStatus;
-
     private ImageView joystick;
-
-    private TextView debugGyroX;
-    private TextView debugGyroY;
-    private TextView debugGyroZ;
 
     private final float EPSILON = 0.001f;
     private final long VIBRATE_PERIOD = 70; //In seconds
@@ -81,8 +74,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
         pressed_keys.put(' ',false);
 
         //Element Creation
-        debugStatus = (TextView) findViewById(R.id.debugStatus);
-
         btSocket = BluetoothApp.btSocket;
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
@@ -92,40 +83,34 @@ public class PlayActivity extends Activity implements SensorEventListener {
         aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
         vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
 
-        debugGyroX = (TextView) findViewById(R.id.debugGyroX);
-        debugGyroY = (TextView) findViewById(R.id.debugGyroY);
-        debugGyroZ = (TextView) findViewById(R.id.debugGyroZ);
-
-        debugGyroX.setText("X");
-        debugGyroY.setText("Y");
-        debugGyroZ.setText("Z");
-
         joystick = (ImageView) findViewById(R.id.joystick);
-        joystick.setVisibility(View.INVISIBLE);
+        joystick.setAlpha(0f);
 
         display = getWindowManager().getDefaultDisplay();
         size = new Point();
         display.getSize(size);
         screenWidth = size.x;
         screenHeight = size.y;
+        
+        Log.i("Test", "D:<");
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
+        Log.i("Test","he there");
         if(event.getAction() == MotionEvent.ACTION_UP){ //user releases touch
             unpress_all_keys();
             origin_offset_x = null;
             origin_offset_y = null;
+            Log.i("Test", "released");
             joystick.setAlpha(0.5f);
         }
         else{   //When user touches
             if (origin_offset_x != null && origin_offset_y != null) {   //continuing to touch
                 float x_corrected = event.getX() - origin_offset_x;
                 float y_corrected = origin_offset_y - event.getY();
-
                 float ref_angle = (float) Math.abs(Math.atan(y_corrected/x_corrected));
-                if (x_corrected >= 0 && y_corrected >= 0) {   //Quadrant I
+                if (x_corrected >= 0 && y_corrected >= 0) {  //Quadrant I
                     //Nothing happens ref_angle is the same
                 } else if (x_corrected < 0 && y_corrected > 0) {    //Quadrant II
                     ref_angle = (float) Math.PI - ref_angle;
@@ -154,8 +139,9 @@ public class PlayActivity extends Activity implements SensorEventListener {
             else {  //First time touching.
                 origin_offset_x = new Float(event.getX());
                 origin_offset_y = new Float(event.getY());
-                joystick.setX(origin_offset_x);
-                joystick.setY(origin_offset_y);
+                Log.i("Test", origin_offset_x + ", " + origin_offset_y);
+                joystick.setX(origin_offset_x-joystick.getWidth()/2);
+                joystick.setY(origin_offset_y-joystick.getHeight());
                 joystick.setAlpha(1.0f);
             }
         }
@@ -187,7 +173,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 temp += ""+c;
             }
         }
-        debugStatus.setText("Turning off "+temp);
+        Log.i("Test", "Turning off "+temp);
     }
 
     private void turnOn(int region){
@@ -200,7 +186,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 temp += ""+c;
             }
         }
-        debugStatus.setText("Turning on "+temp);
+        Log.i("Test", "Turning on "+temp);
     }
 
     @Override
@@ -210,26 +196,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
             float axisX = event.values[0];
             float axisY = event.values[1];
             float axisZ = event.values[2];
-
-            //Debug sensor
-            if(axisX > EPSILON){
-                debugGyroX.setText(Float.toString(axisX));
-            }
-            else{
-                debugGyroX.setText("0");
-            }
-            if(axisY > EPSILON){
-                debugGyroY.setText(Float.toString(axisY));
-            }
-            else{
-                debugGyroY.setText("0");
-            }
-            if(axisZ > EPSILON){
-                debugGyroZ.setText(Float.toString(axisZ));
-            }
-            else{
-                debugGyroZ.setText("0");
-            }
 
             //For tracking mouse
             if(!trackingPaused && (sigRotation(axisX) || sigRotation(axisZ)))
@@ -249,7 +215,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
         boolean result = true;
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_UP:
-                debugStatus.setText("Pressed Volume Up");
+                Log.i("Test", "Pressed Volume Up");
                 if(!volume_up_is_down){
                     toggleBtn("L");
                     volume_up_is_down = true;
@@ -257,7 +223,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
                 vib.vibrate(VIBRATE_PERIOD); //vibrate when you fire.
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
-                debugStatus.setText("Pressed Volume Down");
+                Log.i("Test", "Pressed Volume Down");
                 if(!volume_down_is_down){
                     CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
                     volume_down_is_down = true;
@@ -275,14 +241,14 @@ public class PlayActivity extends Activity implements SensorEventListener {
         boolean result = true;
         switch (keyCode){
             case KeyEvent.KEYCODE_VOLUME_UP:
-                debugStatus.setText("Pressed Volume Up");
+                Log.i("Test", "Pressed Volume Up");
                 if(volume_up_is_down){
                     toggleBtn("L");
                     volume_up_is_down = false;
                 }
                 break;
             case KeyEvent.KEYCODE_VOLUME_DOWN:
-                debugStatus.setText("Pressed Volume Down");
+                Log.i("Test", "Pressed Volume Down");
                 if(volume_down_is_down){
                     CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
                     volume_down_is_down = false;
