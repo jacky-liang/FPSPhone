@@ -3,22 +3,28 @@ package com.fpsphone;
 import android.app.Activity;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import android.view.View.OnClickListener;
 
 /**
  * Created by jacky on 1/30/2015.
@@ -30,18 +36,20 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private Sensor gyroscope;
     private Vibrator vib;
     
-    private Button btn_w;
-    private Button btn_a;
-    private Button btn_p;
     private Button btn_d;
-    private Button btn_s;
-    private Button btn_g;
 
     private boolean trackingPaused = false;
     private boolean volume_down_is_down = false;
     private boolean volume_up_is_down = false;
 
     private TextView debugStatus;
+    private Display display;
+    private int stageWidth;
+    private int stageHeight;
+    private Point size;
+
+    private ImageView joystick;
+
     private TextView debugGyroX;
     private TextView debugGyroY;
     private TextView debugGyroZ;
@@ -70,6 +78,12 @@ public class PlayActivity extends Activity implements SensorEventListener {
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
 
+        display = getWindowManager().getDefaultDisplay();
+        size = new Point();
+        display.getSize(size);
+        stageWidth = size.x;
+        stageHeight = size.y;
+
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         aSensorManager.registerListener(this,gyroscope,SensorManager.SENSOR_DELAY_GAME);
@@ -84,61 +98,65 @@ public class PlayActivity extends Activity implements SensorEventListener {
         debugGyroZ.setText("Z");
 
         //Button event handlers
-        btn_w = (Button) findViewById(R.id.buttonW);
-        btn_w.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("W Down");
-                        toggleKey("W");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("W Up");
-                        toggleKey("W");
-                        break;
-                }
-                return true;
-            }
-        });
-        btn_g = (Button) findViewById(R.id.buttonG);
-        btn_g.setOnClickListener(new View.OnClickListener() {
+
+        joystick = (ImageView) findViewById(R.id.joystick);
+        joystick.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                debugStatus.setText("Pressed G");
-            }
-        });
-        btn_a = (Button) findViewById(R.id.buttonA);
-        btn_a.setOnTouchListener(new View.OnTouchListener() {
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("A Down");
-                        toggleKey("A");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("A Up");
-                        toggleKey("A");
-                        break;
-                }
+//                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    float touchX = event.getX();
+                    float touchY = event.getY();
+                    debugStatus.setText("Touch Coords: " + String.valueOf(touchX) + "x" + String.valueOf(touchY));
+
+                    float originX = (float)(stageWidth / 2);
+                    float originY = (float)(stageHeight / 2);
+
+                    float delta = (float) Math.abs(Math.atan((event.getY() - originY) / (event.getX() - originX)));
+                    if (touchX >= 0 && touchY >= 0) {   //Quadrant I
+                        if (delta > 45) {
+                            debugStatus.setText("Move W");
+                            toggleKey("W");
+                        }
+                        else {
+                            debugStatus.setText("Move D");
+                            toggleKey("D");
+                        }
+                        //Nothing happens delta is the same
+                    } else if (touchX < 0 && touchY > 0) {    //Quadrant II
+                        delta = 180 - delta;
+                        if (delta < 135) {
+                            debugStatus.setText("Move W");
+                            toggleKey("W");
+                        }
+                        else {
+                            debugStatus.setText("Move A");
+                            toggleKey("A");
+                        }
+                    } else if (touchX <= 0 && touchY <= 0) {    //Quadrant III
+                        delta = 180 + delta;
+                        if (delta < 225) {
+                            debugStatus.setText("Move A");
+                            toggleKey("A");
+                        }
+                        else {
+                            debugStatus.setText("Move S");
+                            toggleKey("S");                            
+                        }
+                    } else if (touchX > 0 && touchY < 0) {    //Quadrant IV
+                        delta = 360 - delta;
+                        if (delta < 315) {
+                            debugStatus.setText("Move S");
+                            toggleKey("S");
+                        }
+                        else {
+                            debugStatus.setText("Move D");
+                            toggleKey("D");
+                        }
+                    }
                 return true;
             }
         });
-        btn_p = (Button) findViewById(R.id.buttonPause);
-        btn_p.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("P Down");
-                        trackingPaused = true;
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("P Up");
-                        trackingPaused = false;
-                        break;
-                }
-                return true;
-            }
-        });
+
         btn_d = (Button) findViewById(R.id.buttonD);
         btn_d.setOnTouchListener(new View.OnTouchListener() {
             public boolean onTouch(View v, MotionEvent event) {
@@ -150,22 +168,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
                     case MotionEvent.ACTION_UP:
                         debugStatus.setText("D Up");
                         toggleKey("D");
-                        break;
-                }
-                return true;
-            }
-        });
-        btn_s = (Button) findViewById(R.id.buttonS);
-        btn_s.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        debugStatus.setText("S Down");
-                        toggleKey("S");
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        debugStatus.setText("S Up");
-                        toggleKey("S");
                         break;
                 }
                 return true;

@@ -10,13 +10,14 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:columnCount="3"
-        android:rowCount="6"
+        android:rowCount="7"
         android:clickable="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true">
+        android:layout_alignParentEnd="true"
+        android:id="@+id/grid">
 
         <TextView
             android:layout_width="wrap_content"
@@ -25,52 +26,11 @@
             android:layout_row="0"
             android:layout_column="1" />
 
-        <Button
-            android:layout_width="113dp"
-            android:layout_height="113dp"
-            android:text="W"
-            android:id="@+id/buttonW"
-            android:layout_row="1"
-            android:layout_column="1" />
-
-        <Button
-            android:layout_width="113dp"
-            android:layout_height="113dp"
-            android:text="Grenade"
-            android:id="@+id/buttonG"
-            android:layout_row="1"
-            android:layout_column="2" />
-
-        <Button
-            android:layout_width="113dp"
-            android:layout_height="113dp"
-            android:text="A"
-            android:id="@+id/buttonA"
+        <ImageButton
+            android:layout_width="match_parent"
+            android:layout_height="344dp"
+            android:id="@+id/joystick"
             android:layout_row="2"
-            android:layout_column="0" />
-
-        <Button
-            android:layout_width="113dp"
-            android:layout_height="113dp"
-            android:text="Pause"
-            android:id="@+id/buttonPause"
-            android:layout_row="2"
-            android:layout_column="1" />
-
-        <Button
-            android:layout_width="113dp"
-            android:layout_height="113dp"
-            android:text="D"
-            android:id="@+id/buttonD"
-            android:layout_row="2"
-            android:layout_column="2" />
-
-        <Button
-            android:layout_width="113dp"
-            android:layout_height="113dp"
-            android:text="S"
-            android:id="@+id/buttonS"
-            android:layout_row="3"
             android:layout_column="1" />
 
         <TextView
@@ -102,6 +62,16 @@
             android:id="@+id/debugGyroZ"
             android:layout_row="4"
             android:layout_column="2" />
+
+        <SeekBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/sensitivityBar"
+            android:layout_row="6"
+            android:layout_column="1"
+            android:max="200"
+            android:progress="200"
+            android:indeterminate="false" />
 
 
     </GridLayout>
