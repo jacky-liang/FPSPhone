@@ -176,8 +176,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
 	        synchronized(recentRotationSpeeds)
 	        {
 		        recentRotationSpeeds.add(new Pair<Long, Float>(event.timestamp, axisY));
-		        //remove rotation speeds from over a second ago
-		        while (event.timestamp - recentRotationSpeeds.peek().first > 1000000000)
+		        //remove rotation speeds from over 0.8 seconds ago
+		        while (event.timestamp - recentRotationSpeeds.peek().first > 800000000)
 			        recentRotationSpeeds.remove();
 	        }
 
@@ -315,7 +315,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
 		{
 			while(true)
 			{
-				Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 99999f);
+				Pair<Long, Float> max = new Pair<Long, Float>(0L, 0f), min = new Pair<Long, Float>(0L, 0f);
 				synchronized (recentRotationSpeeds)
 				{
 					for (Pair<Long, Float> rotY : recentRotationSpeeds)
@@ -326,8 +326,16 @@ public class PlayActivity extends Activity implements SensorEventListener {
 							min = rotY;
 					}
 					//detect reload
-					if (max.second > 5 && min.second < -5 && Math.abs(recentRotationSpeeds.peekLast().second) < 2
-							&& Math.abs(max.first - min.first) * (max.second + min.second) >= 1.5)
+					//a is the max speed when turning away from center, b when returning
+					float a = max.second, b = -min.second; //right then left
+					if(min.first < max.first) //left then right
+					{
+						a = -min.second;
+						b = max.second;
+					}
+					if (a > 6 && b > 3 //allow turning back to be slower
+							&& Math.abs(recentRotationSpeeds.peekLast().second) < 2 //make sure we're almost done turning back
+							&& Math.abs(max.first - min.first) / 1000000000f * (max.second - min.second) >= 1.5) //enough magnitude of turn
 					{
 						System.out.println("reload! direction = " + Math.signum(min.first - max.first));
 						//if max.first < min.first, the phone was turned right then left, vice versa
