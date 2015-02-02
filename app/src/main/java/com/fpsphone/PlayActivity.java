@@ -42,12 +42,15 @@ public class PlayActivity extends Activity implements SensorEventListener {
 	//recording accelerations for gesture (i.e. knife)
 	private final LinkedList<Pair<Long, Float>> recentAccelerations = new LinkedList<Pair<Long, Float>>();
 
+	private float[] lastQuaternion;
+	private long lastQuaternionTime;
+
     private ImageView joystick;
 
     private final static float EPSILON = 0.03f;
     private final static long VIBRATE_PERIOD = 70; //In seconds
-    private final static float ROT_TO_TRANS = 1.8f;
-    private final static float ROT_TO_TRANS_FAST = 5.5f;
+    private final static float ROT_TO_TRANS = 1f;
+    private final static float ROT_TO_TRANS_FAST = 3f;
     private float CUR_ROT_TO_TRANS = ROT_TO_TRANS;
 	private long last_vol_up_time;
 	private final static long DOUBLE_CLICK_TIME_DIFF = 500000000;
@@ -96,7 +99,12 @@ public class PlayActivity extends Activity implements SensorEventListener {
         aSensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
 	    Sensor accelerometer = aSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 	    aSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+	    Sensor rotation = aSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+	    aSensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_GAME);
         vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
+
+	    lastQuaternion = new float[4];
+	    lastQuaternionTime = System.nanoTime();
 
 		new GestureMonitor().start();
 
@@ -249,6 +257,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
 			        recentRotationSpeeds.remove();
 	        }
 
+	        /*
             if(!trackingPaused)
             {
 	            moveMouse(sigRotation(axisX) ? axisX : axisX * axisX, sigRotation(axisZ) ? axisZ : axisZ * axisZ);
@@ -256,6 +265,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
             {
 	            moveMouse(0, 0);
             }
+            */
         }else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)
         {
 	        synchronized(recentAccelerations)
@@ -265,6 +275,34 @@ public class PlayActivity extends Activity implements SensorEventListener {
 		        //remove accelerations from over 0.7 second ago
 		        while (event.timestamp - recentAccelerations.peek().first > 700000000)
 			        recentAccelerations.remove();
+	        }
+        }else if(event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR)
+        {
+	        float[] b = new float[]{ 0, event.values[0], event.values[1], event.values[2] };
+	        b[0] = (event.values.length >= 4) ? event.values[3] : (float) Math.sqrt(1 - (b[1]*b[1] + b[2]*b[2] + b[3]*b[3]));
+	        float[] a = new float[]{ lastQuaternion[0], -lastQuaternion[1], -lastQuaternion[2], -lastQuaternion[3] };
+	        float[] c = new float[]{
+				a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3],
+			    a[0]*b[1] + a[1]*b[0] + a[2]*b[3] - a[3]*b[2],
+			    a[0]*b[2] - a[1]*b[3] + a[2]*b[0] + a[3]*b[1],
+			    a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + a[3]*b[0]
+	        };
+	        double[] angles = new double[]{
+				Math.atan2(2*(c[0]*c[1] + c[2]*c[3]), 1 - 2*(c[1]*c[1] + c[2]*c[2])),
+			    Math.asin(2*(c[0]*c[2] - c[3]*c[1])),
+			    Math.atan2(2*(c[0]*c[3] + c[1]*c[2]), 1 - 2*(c[2]*c[2] + c[3]*c[3]))
+	        };
+
+//	        Log.d("rotation", event.timestamp + "\t" + angles[0] + "\t" + angles[1] + "\t" + angles[2]);
+	        lastQuaternion = b;
+	        lastQuaternionTime = event.timestamp;
+
+	        if(!trackingPaused)
+	        {
+		        moveMouse((float) angles[0], (float) angles[2]);
+	        }else
+	        {
+		        moveMouse(0, 0);
 	        }
         }
     }
@@ -345,13 +383,11 @@ public class PlayActivity extends Activity implements SensorEventListener {
     }
 
     private void moveMouse(float axisX, float axisZ){
-        float velocityHoriz = CUR_ROT_TO_TRANS * axisX * -1;
-        float velocityVerti = CUR_ROT_TO_TRANS * axisZ * -1;
-        if (velocityHoriz > 0){
-            velocityHoriz *= 1.3;
-        }
+	    //displacements
+        float horiz = CUR_ROT_TO_TRANS * axisX * -1;
+        float vert = CUR_ROT_TO_TRANS * axisZ * -1;
 
-        String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(velocityHoriz) + "|" + Float.toString(velocityVerti));
+        String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(horiz) + "|" + Float.toString(vert));
         mConnectedThread.write(msg);
     }
 

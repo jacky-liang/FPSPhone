@@ -1,5 +1,7 @@
 package com.fpsphone.computer;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -10,7 +12,7 @@ class Parser {
 	Robot robot;
 	Set<Integer> pressedKeys, pressedButtons;
 	StringBuilder message;
-	MouseMover mouseMover;
+	float xOffset, yOffset;
 	static enum Mode //what part of the message we should currently be reading
 	{
 		START,
@@ -30,8 +32,7 @@ class Parser {
 		pressedKeys = new HashSet<Integer>();
 		pressedButtons = new HashSet<Integer>();
 		message = new StringBuilder();
-		mouseMover = new MouseMover(robot);
-		mouseMover.start();
+		xOffset = yOffset = 0;
 		mode = Mode.START;
 		
 		messageCount = 0;
@@ -128,18 +129,22 @@ class Parser {
 		case MOVE:
 			if(b == '&')
 			{
-				String[] velocities = message.toString().split("\\|");
-				if(velocities.length == 2)
+				String[] diffs = message.toString().split("\\|");
+				if(diffs.length == 2)
 				{
-					try{
-						double x = Double.parseDouble(velocities[0]), y = Double.parseDouble(velocities[1]);
-						mouseMover.xVel = x;
-						mouseMover.yVel = y;
-//						System.out.println("Set mouse velocity to <" + x + ", " + y + ">");
-					}catch(NumberFormatException e)
-					{
-						System.out.println("Invalid input: " + velocities[0] + " and/or " + velocities[1] + " are not valid numbers; discarding message");
-					}
+					//skip try for speed
+//					try{
+						Point location = MouseInfo.getPointerInfo().getLocation();
+						float rawX = location.x + 800*Float.parseFloat(diffs[0]) + xOffset,
+							rawY = location.y - 800*Float.parseFloat(diffs[1]) + yOffset;
+						int x = Math.round(rawX), y = Math.round(rawY);
+						xOffset = rawX - x;
+						yOffset = rawY - y;
+						robot.mouseMove(x, y);
+//					}catch(NumberFormatException e)
+//					{
+//						System.out.println("Invalid input: " + diffs[0] + " and/or " + diffs[1] + " are not valid numbers; discarding message");
+//					}
 				}else
 				{
 					System.out.println("Invalid input: " + message.toString() + " does not have exactly one |; discarding message");
