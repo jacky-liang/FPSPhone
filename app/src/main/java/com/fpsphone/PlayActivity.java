@@ -347,9 +347,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private void moveMouse(float axisX, float axisZ){
         float velocityHoriz = CUR_ROT_TO_TRANS * axisX * -1;
         float velocityVerti = CUR_ROT_TO_TRANS * axisZ * -1;
-        if (velocityHoriz > 0){
-            velocityHoriz *= 1.3;
-        }
 
         String msg = bt_encapsulate(PREFIX_MOVE + Float.toString(velocityHoriz) + "|" + Float.toString(velocityVerti));
         mConnectedThread.write(msg);
