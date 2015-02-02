@@ -288,7 +288,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 Log.i("Test", "Pressed Volume Down");
                 if(!volume_down_is_down){
-                    CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
+//                    CUR_ROT_TO_TRANS = ROT_TO_TRANS_FAST;
+                    trackingPaused = true;
                     volume_down_is_down = true;
 	                if(System.nanoTime() - last_vol_up_time < DOUBLE_CLICK_TIME_DIFF){
 		                System.out.println("Gesture Started");
@@ -321,7 +322,8 @@ public class PlayActivity extends Activity implements SensorEventListener {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 Log.i("Test", "Pressed Volume Down Release");
                 if(volume_down_is_down){
-                    CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
+//                    CUR_ROT_TO_TRANS  = ROT_TO_TRANS;
+                    trackingPaused = false;
 	                last_vol_up_time = System.nanoTime();
                     volume_down_is_down = false;
                 }
