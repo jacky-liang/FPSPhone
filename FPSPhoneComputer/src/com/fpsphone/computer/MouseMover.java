@@ -7,14 +7,15 @@ import java.awt.Robot;
 class MouseMover extends Thread {
 	Robot robot;
 	double xVel, yVel;
+	double xOffset, yOffset;
 	private final static int DELAY = 5;
 	private final static double PIXELS_PER_METER = 800, FACTOR = (DELAY / 1000d) * PIXELS_PER_METER; 
 	
 	MouseMover(Robot r)
 	{
 		robot = r;
-		xVel = 0;
-		yVel = 0;
+		xVel = yVel = 0;
+		xOffset = yOffset = 0;
 	}
 	
 	@Override
@@ -26,7 +27,11 @@ class MouseMover extends Thread {
 			{
 				Point location = MouseInfo.getPointerInfo().getLocation();
 				//note the y-axis is 0 at the top of the screen, and positive is downward
-				robot.mouseMove(location.x + (int) (xVel * FACTOR), location.y - (int) (yVel * FACTOR));
+				double rawX = location.x + xVel*FACTOR + xOffset, rawY = location.y - yVel*FACTOR + yOffset;
+				int x = (int) Math.round(rawX), y = (int) Math.round(rawY);
+				robot.mouseMove(x, y);
+				xOffset = rawX - x;
+				yOffset = rawY - y;
 			}
 			try {
 				sleep(DELAY);

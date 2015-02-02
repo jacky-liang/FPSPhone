@@ -237,7 +237,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE)
         {
-            // Axis of the rotation sample, not normalized yet.
             float axisX = event.values[0];
             float axisY = event.values[1];
             float axisZ = event.values[2];
