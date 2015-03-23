@@ -6,10 +6,9 @@
     <string name="action_settings">Settings</string>
 
     <!--Bluetooth Setup Activity-->
-    <string name="btn_blutooth_on">Turn Bluetooth On</string>
-    <string name="btn_blutooth_off">Turn Bluetooth Off</string>
-    <string name="btn_bluetooth_device_list">List paired Devices</string>
-    <string name="btn_bluetooth_find">Search Nearby Devices</string>
+    <string name="btn_blutooth_on">Enable Bluetooth</string>
+    <string name="btn_bluetooth_find">Search Devices</string>
+    <string name="btn_bluetooth_cancel">Cancel Search</string>
     <string name="btn_bluetooth_confirm">Confirm Connected Device</string>
     
     <!--Main Activity-->

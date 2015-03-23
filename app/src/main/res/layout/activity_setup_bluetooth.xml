@@ -37,10 +37,10 @@
             android:text="@string/btn_blutooth_on" />
 
         <Button
-            android:id="@+id/turnOff"
+            android:id="@+id/search"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/btn_blutooth_off" />
+            android:text="@string/btn_bluetooth_find" />
 
     </LinearLayout>
 
@@ -51,18 +51,6 @@
         android:orientation="vertical"
         android:layout_marginTop="80dp"
         android:id="@+id/linearLayout">
-
-        <Button
-            android:id="@+id/paired"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_bluetooth_device_list" />
-
-        <Button
-            android:id="@+id/search"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_bluetooth_find" />
 
         <ListView
             android:id="@+id/list_view_devices"
