@@ -17,6 +17,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.IOException;
+import java.util.IllegalFormatCodePointException;
 import java.util.Set;
 import java.util.UUID;
 import android.view.View.OnClickListener;
@@ -47,12 +48,8 @@ public class SetupBluetoothActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setup_bluetooth);
 
-        Intent intent = getIntent();
-        String message = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
-        
         //display message:
         bluetoothDebugStatus = (TextView) findViewById(R.id.bluetoothDebugStatus);
-        bluetoothDebugStatus.setText(message);
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         if(btAdapter == null) {
@@ -250,7 +247,11 @@ public class SetupBluetoothActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(bReceiver);
+        try {
+            unregisterReceiver(bReceiver);    
+        } catch (IllegalArgumentException error) {
+            
+        }
     }
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {

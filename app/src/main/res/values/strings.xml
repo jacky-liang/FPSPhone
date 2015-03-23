@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">FPSPhone</string>
-    <string name="hello_world">Hello world!</string>
+    <!--Global-->
+    <string name="app_name">Gesture Phone</string>
     <string name="action_settings">Settings</string>
 
-    <string name="go_to_bluetooth">Setup Bluetooth</string>
-    <string name="from_bluetooth_to_main">Confirm Setup</string>
+    <!--Bluetooth Setup Activity-->
     <string name="btn_blutooth_on">Turn Bluetooth On</string>
     <string name="btn_blutooth_off">Turn Bluetooth Off</string>
     <string name="btn_bluetooth_device_list">List paired Devices</string>
     <string name="btn_bluetooth_find">Search Nearby Devices</string>
     <string name="btn_bluetooth_confirm">Confirm Connected Device</string>
+    
+    <!--Main Activity-->
+    <string name="main_welcome_text">Welcome to Gesture Phone!</string>
+    <string name="main_instructions"><a href="http://www.google.com">Setup Instructions</a></string>
+    <string name="go_to_bluetooth">Connect to Computer</string>
 
 </resources>
