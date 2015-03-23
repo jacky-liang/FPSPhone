@@ -36,6 +36,7 @@ public class PlayActivity extends Activity implements SensorEventListener {
     private boolean trackingPaused = false;
     private boolean volume_down_is_down = false;
     private boolean volume_up_is_down = false;
+    private boolean paused = false;
 
 	//to determine maximum and minimum rotation speed along the axis for reload/change weapon
 	private final LinkedList<Pair<Long, Float>> recentRotationSpeeds = new LinkedList<Pair<Long, Float>>();
@@ -203,7 +204,6 @@ public class PlayActivity extends Activity implements SensorEventListener {
         if (pressed_keys.get(' ')) {    //Right Mouse Button
             toggleBtn(" ");
             pressed_keys.put(' ', false);
-
         }
     }    
     
@@ -362,12 +362,34 @@ public class PlayActivity extends Activity implements SensorEventListener {
         return START + s + END;
     }
 
+    
+    protected void onPause(){
+        super.onPause();
+        unpress_all_keys();
+        moveMouse(0,0);
+        paused = true;
+    }
+    
+    protected void onResume() {
+        super.onResume();
+        paused = false;
+    }
+    
+    protected void onDestroy() {
+        super.onDestroy();
+        unpress_all_keys();
+        moveMouse(0,0);
+        mConnectedThread.cancel();
+    }
+
     private class ConnectedThread extends Thread {
+        private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
-
+        
         //creation of the connect thread
         public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
@@ -383,14 +405,22 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
         //write method
         public void write(String input) {
-            byte[] msgBuffer = input.getBytes();           //converts entered String into bytes
-            try {
-                mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
-            } catch (IOException e) {
-                //if you cannot write, close the application
-                Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_SHORT).show();
-                finish();
+            if (!paused) {
+                byte[] msgBuffer = input.getBytes();           //converts entered String into bytes
+                try {
+                    mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
+                } catch (IOException e) {
+                    //if you cannot write, close the application
+                    Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
             }
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
         }
     }
 
