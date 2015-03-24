@@ -94,6 +94,15 @@ public class PlayActivity extends Activity implements SensorEventListener {
 
         aSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         Sensor gyroscope = aSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+	    for(Sensor s : aSensorManager.getSensorList(Sensor.TYPE_GYROSCOPE))
+	    {
+		    if(s.getName().contains("Corrected") || s.getVendor().equals("Google Inc."))
+		    {
+			    gyroscope = s;
+			    break;
+		    }
+	    }
+	    Log.i("gyro", gyroscope.toString());
         aSensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
 	    Sensor accelerometer = aSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 	    aSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
